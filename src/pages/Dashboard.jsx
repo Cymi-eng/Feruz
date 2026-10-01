@@ -8,15 +8,29 @@ import {
   Search,
   ChevronDown,
   TrendingUp,
+  LogOut,
 } from 'lucide-react'
 
+import { useNavigate } from 'react-router-dom'
 import { useMembers } from '../context/MemberContext'
+import { logout } from '../utils/auth'
 
 function Dashboard() {
+  const navigate = useNavigate()
+
   const {
     members = [],
     departments = [],
   } = useMembers()
+
+  // -----------------------------------------
+  // LOGOUT
+  // -----------------------------------------
+
+  const handleLogout = () => {
+    logout()
+    navigate('/login', { replace: true })
+  }
 
   // -----------------------------------------
   // REAL MEMBER DATA
@@ -140,7 +154,7 @@ function Dashboard() {
 
         <div className="flex items-center gap-3 sm:gap-4">
 
-          {/* Search: fills the row on phones, fixed width from md up */}
+          {/* Search */}
 
           <div className="flex min-w-0 flex-1 items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2.5 md:flex-none md:py-2">
             <Search
@@ -170,7 +184,7 @@ function Dashboard() {
             <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-red-500 md:right-1 md:top-1" />
           </button>
 
-          {/* Profile */}
+          {/* Profile + Logout */}
 
           <div className="flex shrink-0 items-center gap-2 rounded-lg border border-slate-200 bg-white px-2 py-1.5 sm:px-3 sm:py-2">
 
@@ -193,12 +207,23 @@ function Dashboard() {
               className="hidden text-slate-400 sm:block"
             />
 
+            {/* Logout */}
+
+            <button
+              type="button"
+              onClick={handleLogout}
+              aria-label="Logout"
+              title="Logout"
+              className="ml-1 rounded-lg p-2 text-slate-500 transition hover:bg-red-50 hover:text-red-600"
+            >
+              <LogOut size={18} />
+            </button>
+
           </div>
 
         </div>
 
       </div>
-
 
       {/* Statistics */}
 
@@ -232,6 +257,7 @@ function Dashboard() {
               </div>
 
               <div className="mt-3 flex items-start gap-1 text-xs text-slate-500 sm:mt-4 sm:items-center sm:text-sm">
+
                 <TrendingUp
                   size={16}
                   className="mt-0.5 shrink-0 text-blue-600 sm:mt-0"
@@ -240,6 +266,7 @@ function Dashboard() {
                 <span>
                   {stat.description}
                 </span>
+
               </div>
 
             </div>
@@ -247,7 +274,6 @@ function Dashboard() {
         })}
 
       </div>
-
 
       {/* Student Overview + Member Overview */}
 
@@ -316,6 +342,7 @@ function Dashboard() {
 
           {students.length === 0 && (
             <div className="mt-6 rounded-lg border border-dashed border-slate-200 py-8 text-center">
+
               <GraduationCap
                 size={32}
                 className="mx-auto text-slate-300"
@@ -324,11 +351,11 @@ function Dashboard() {
               <p className="mt-2 text-sm text-slate-500">
                 No student records available yet.
               </p>
+
             </div>
           )}
 
         </div>
-
 
         {/* Member Breakdown */}
 
@@ -353,6 +380,7 @@ function Dashboard() {
           <div className="grid grid-cols-2 gap-3 sm:gap-4">
 
             <div className="rounded-xl bg-blue-50 p-4 sm:p-5">
+
               <p className="text-sm text-slate-500">
                 Students
               </p>
@@ -360,9 +388,11 @@ function Dashboard() {
               <p className="mt-2 text-2xl font-bold text-slate-800">
                 {students.length}
               </p>
+
             </div>
 
             <div className="rounded-xl bg-slate-50 p-4 sm:p-5">
+
               <p className="text-sm text-slate-500">
                 Community
               </p>
@@ -370,6 +400,7 @@ function Dashboard() {
               <p className="mt-2 text-2xl font-bold text-slate-800">
                 {communityMembers.length}
               </p>
+
             </div>
 
           </div>
@@ -436,7 +467,6 @@ function Dashboard() {
 
       </div>
 
-
       {/* Departments */}
 
       <div className="rounded-xl border border-slate-200 bg-white p-4 sm:p-6">
@@ -458,6 +488,7 @@ function Dashboard() {
         </div>
 
         {departmentStats.length > 0 ? (
+
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4 xl:grid-cols-5">
 
             {departmentStats.map((department) => (
@@ -487,7 +518,9 @@ function Dashboard() {
             ))}
 
           </div>
+
         ) : (
+
           <div className="rounded-xl border border-dashed border-slate-200 py-10 text-center">
 
             <Building2
@@ -504,6 +537,7 @@ function Dashboard() {
             </p>
 
           </div>
+
         )}
 
       </div>
