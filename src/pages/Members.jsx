@@ -1,35 +1,62 @@
-
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   Search,
   Plus,
   MoreVertical,
   Users,
+  RefreshCw,
 } from 'lucide-react'
 
 import { useMembers } from '../context/MemberContext'
 
 function Members() {
   const navigate = useNavigate()
-  const { members } = useMembers()
+
+  const {
+    members = [],
+    loading,
+  } = useMembers()
 
   const [search, setSearch] = useState('')
   const [filter, setFilter] = useState('all')
+  const [showLoading, setShowLoading] = useState(true)
+
+  useEffect(() => {
+    if (!loading) {
+      setShowLoading(false)
+    }
+  }, [loading])
 
   const filteredMembers = members.filter((member) => {
     const name = member.name || ''
     const email = member.email || ''
+    const admissionNumber =
+      member.admissionNumber ||
+      member.admission_number ||
+      ''
+
+    const searchValue = search.toLowerCase()
 
     const matchesSearch =
-      name.toLowerCase().includes(search.toLowerCase()) ||
-      email.toLowerCase().includes(search.toLowerCase())
+      name.toLowerCase().includes(searchValue) ||
+      email.toLowerCase().includes(searchValue) ||
+      admissionNumber.toLowerCase().includes(searchValue)
 
     const matchesFilter =
-      filter === 'all' || member.type === filter
+      filter === 'all' ||
+      member.type === filter
 
     return matchesSearch && matchesFilter
   })
+
+  const students = members.filter(
+    (member) => member.type === 'student'
+  ).length
+
+  const community = members.filter(
+    (member) => member.type === 'community'
+  ).length
 
   return (
     <div className="space-y-6">
@@ -86,11 +113,7 @@ function Members() {
           </p>
 
           <p className="mt-2 text-2xl font-bold text-slate-800">
-            {
-              members.filter(
-                (member) => member.type === 'student'
-              ).length
-            }
+            {students}
           </p>
         </div>
 
@@ -100,11 +123,7 @@ function Members() {
           </p>
 
           <p className="mt-2 text-2xl font-bold text-slate-800">
-            {
-              members.filter(
-                (member) => member.type === 'community'
-              ).length
-            }
+            {community}
           </p>
         </div>
 
@@ -176,168 +195,213 @@ function Members() {
       {/* Members Table */}
       <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
 
-        <div className="overflow-x-auto">
-
-          <table className="w-full">
-
-            <thead className="border-b border-slate-200 bg-slate-50">
-
-              <tr>
-
-                <th className="px-6 py-4 text-left text-xs font-semibold uppercase text-slate-500">
-                  Member
-                </th>
-
-                <th className="px-6 py-4 text-left text-xs font-semibold uppercase text-slate-500">
-                  Type
-                </th>
-
-                <th className="px-6 py-4 text-left text-xs font-semibold uppercase text-slate-500">
-                  Year
-                </th>
-
-                <th className="px-6 py-4 text-left text-xs font-semibold uppercase text-slate-500">
-                  Department
-                </th>
-
-                <th className="px-6 py-4 text-left text-xs font-semibold uppercase text-slate-500">
-                  Accountability
-                </th>
-
-                <th className="px-6 py-4 text-left text-xs font-semibold uppercase text-slate-500">
-                  Status
-                </th>
-
-                <th className="px-6 py-4"></th>
-
-              </tr>
-
-            </thead>
-
-            <tbody className="divide-y divide-slate-100">
-
-              {filteredMembers.map((member) => (
-
-                <tr
-                  key={member.id}
-                  className="transition hover:bg-slate-50"
-                >
-
-                  {/* MEMBER */}
-                  <td className="px-6 py-4">
-
-                    <div className="flex items-center gap-3">
-
-                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100 font-semibold text-blue-700">
-
-                        {(member.name || 'NA')
-                          .split(' ')
-                          .map((word) => word[0])
-                          .join('')
-                          .slice(0, 2)}
-
-                      </div>
-
-                      <div>
-
-                        <p className="font-medium text-slate-700">
-                          {member.name || 'No name'}
-                        </p>
-
-                        <p className="text-xs text-slate-400">
-                          {member.email || 'No email'}
-                        </p>
-
-                      </div>
-
-                    </div>
-
-                  </td>
-
-                  {/* TYPE */}
-                  <td className="px-6 py-4">
-
-                    <span
-                      className={`rounded-full px-3 py-1 text-xs ${
-                        member.type === 'student'
-                          ? 'bg-blue-50 text-blue-700'
-                          : 'bg-slate-100 text-slate-600'
-                      }`}
-                    >
-                      {member.type === 'student'
-                        ? 'Student'
-                        : 'Community'}
-                    </span>
-
-                  </td>
-
-                  {/* YEAR */}
-                  <td className="px-6 py-4 text-sm text-slate-600">
-                    {member.year || '—'}
-                  </td>
-
-                  {/* DEPARTMENT */}
-                  <td className="px-6 py-4 text-sm text-slate-600">
-                    {member.department || '—'}
-                  </td>
-
-                  {/* GROUP */}
-                  <td className="px-6 py-4 text-sm text-slate-600">
-                    {member.group || '—'}
-                  </td>
-
-                  {/* STATUS */}
-                  <td className="px-6 py-4">
-
-                    <span className="rounded-full bg-green-50 px-3 py-1 text-xs text-green-700">
-                      {member.status || 'Active'}
-                    </span>
-
-                  </td>
-
-                  {/* ACTIONS */}
-                  <td className="px-6 py-4">
-
-                    <button
-                      className="rounded-lg p-2 hover:bg-slate-100"
-                      title="More actions"
-                    >
-                      <MoreVertical
-                        size={18}
-                        className="text-slate-500"
-                      />
-                    </button>
-
-                  </td>
-
-                </tr>
-
-              ))}
-
-            </tbody>
-
-          </table>
-
-        </div>
-
-        {filteredMembers.length === 0 && (
+        {showLoading ? (
 
           <div className="py-16 text-center">
 
-            <Users
-              size={40}
-              className="mx-auto text-slate-300"
+            <RefreshCw
+              size={32}
+              className="mx-auto animate-spin text-blue-600"
             />
 
             <h3 className="mt-4 font-semibold text-slate-700">
-              No members found
+              Loading members...
             </h3>
 
             <p className="mt-1 text-sm text-slate-500">
-              Try changing your search or filter.
+              Connecting to Firebase.
             </p>
 
           </div>
+
+        ) : (
+
+          <>
+
+            <div className="overflow-x-auto">
+
+              <table className="w-full">
+
+                <thead className="border-b border-slate-200 bg-slate-50">
+
+                  <tr>
+
+                    <th className="px-6 py-4 text-left text-xs font-semibold uppercase text-slate-500">
+                      Member
+                    </th>
+
+                    <th className="px-6 py-4 text-left text-xs font-semibold uppercase text-slate-500">
+                      Type
+                    </th>
+
+                    <th className="px-6 py-4 text-left text-xs font-semibold uppercase text-slate-500">
+                      Year
+                    </th>
+
+                    <th className="px-6 py-4 text-left text-xs font-semibold uppercase text-slate-500">
+                      Department
+                    </th>
+
+                    <th className="px-6 py-4 text-left text-xs font-semibold uppercase text-slate-500">
+                      Accountability
+                    </th>
+
+                    <th className="px-6 py-4 text-left text-xs font-semibold uppercase text-slate-500">
+                      Status
+                    </th>
+
+                    <th className="px-6 py-4"></th>
+
+                  </tr>
+
+                </thead>
+
+                <tbody className="divide-y divide-slate-100">
+
+                  {filteredMembers.map((member) => {
+
+                    const initials =
+                      (member.name || 'NA')
+                        .split(' ')
+                        .filter(Boolean)
+                        .map((word) => word[0])
+                        .join('')
+                        .slice(0, 2)
+                        .toUpperCase()
+
+                    return (
+
+                      <tr
+                        key={member.id}
+                        className="transition hover:bg-slate-50"
+                      >
+
+                        {/* MEMBER */}
+                        <td className="px-6 py-4">
+
+                          <div className="flex items-center gap-3">
+
+                            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100 font-semibold text-blue-700">
+
+                              {initials}
+
+                            </div>
+
+                            <div>
+
+                              <p className="font-medium text-slate-700">
+                                {member.name || 'No name'}
+                              </p>
+
+                              <p className="text-xs text-slate-400">
+                                {member.email || 'No email'}
+                              </p>
+
+                            </div>
+
+                          </div>
+
+                        </td>
+
+                        {/* TYPE */}
+                        <td className="px-6 py-4">
+
+                          <span
+                            className={`rounded-full px-3 py-1 text-xs ${
+                              member.type === 'student'
+                                ? 'bg-blue-50 text-blue-700'
+                                : 'bg-slate-100 text-slate-600'
+                            }`}
+                          >
+                            {member.type === 'student'
+                              ? 'Student'
+                              : 'Community'}
+                          </span>
+
+                        </td>
+
+                        {/* YEAR */}
+                        <td className="px-6 py-4 text-sm text-slate-600">
+                          {member.year || '—'}
+                        </td>
+
+                        {/* DEPARTMENT */}
+                        <td className="px-6 py-4 text-sm text-slate-600">
+                          {member.department || '—'}
+                        </td>
+
+                        {/* GROUP */}
+                        <td className="px-6 py-4 text-sm text-slate-600">
+                          {member.group ||
+                            member.accountabilityGroup ||
+                            '—'}
+                        </td>
+
+                        {/* STATUS */}
+                        <td className="px-6 py-4">
+
+                          <span
+                            className={`rounded-full px-3 py-1 text-xs ${
+                              member.status === 'Inactive'
+                                ? 'bg-red-50 text-red-700'
+                                : 'bg-green-50 text-green-700'
+                            }`}
+                          >
+                            {member.status || 'Active'}
+                          </span>
+
+                        </td>
+
+                        {/* ACTIONS */}
+                        <td className="px-6 py-4">
+
+                          <button
+                            className="rounded-lg p-2 hover:bg-slate-100"
+                            title="More actions"
+                          >
+                            <MoreVertical
+                              size={18}
+                              className="text-slate-500"
+                            />
+                          </button>
+
+                        </td>
+
+                      </tr>
+
+                    )
+                  })}
+
+                </tbody>
+
+              </table>
+
+            </div>
+
+            {filteredMembers.length === 0 && (
+
+              <div className="py-16 text-center">
+
+                <Users
+                  size={40}
+                  className="mx-auto text-slate-300"
+                />
+
+                <h3 className="mt-4 font-semibold text-slate-700">
+                  No members found
+                </h3>
+
+                <p className="mt-1 text-sm text-slate-500">
+                  {members.length === 0
+                    ? 'No members have been added yet.'
+                    : 'Try changing your search or filter.'}
+                </p>
+
+              </div>
+
+            )}
+
+          </>
 
         )}
 
@@ -348,4 +412,3 @@ function Members() {
 }
 
 export default Members
-
