@@ -6,9 +6,21 @@ import {
   Plus,
   MoreVertical,
   Users,
+  Phone,
+  Mail,
 } from 'lucide-react'
 
 import { useMembers } from '../context/MemberContext'
+
+function getInitials(name) {
+  return (name || '?')
+    .split(' ')
+    .filter(Boolean)
+    .map((word) => word[0])
+    .join('')
+    .slice(0, 2)
+    .toUpperCase()
+}
 
 function Community() {
   const navigate = useNavigate()
@@ -34,25 +46,25 @@ function Community() {
   })
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5 sm:space-y-6">
 
       {/* Header */}
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
 
-        <div>
+        <div className="min-w-0">
           <div className="flex items-center gap-3">
 
-            <div className="p-3 bg-slate-100 text-slate-600 rounded-lg">
+            <div className="shrink-0 rounded-lg bg-slate-100 p-2.5 text-slate-600 sm:p-3">
               <UserRound size={25} />
             </div>
 
-            <h1 className="text-3xl font-bold text-slate-800">
+            <h1 className="text-2xl font-bold text-slate-800 sm:text-3xl">
               Community Members
             </h1>
 
           </div>
 
-          <p className="mt-2 text-slate-500">
+          <p className="mt-2 text-sm text-slate-500 sm:text-base">
             Manage members from the church community.
           </p>
         </div>
@@ -60,7 +72,7 @@ function Community() {
         <button
           type="button"
           onClick={() => navigate('/community/add')}
-          className="flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+          className="flex w-full items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-3 text-white transition hover:bg-blue-700 md:w-auto md:py-2.5"
         >
           <Plus size={18} />
           Add Community Member
@@ -69,13 +81,13 @@ function Community() {
       </div>
 
       {/* Statistics */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-5">
 
-        <div className="bg-white border border-slate-200 rounded-xl p-5">
+        <div className="col-span-2 rounded-xl border border-slate-200 bg-white p-4 sm:col-span-1 sm:p-5">
 
           <div className="flex items-center gap-3">
 
-            <div className="p-3 bg-blue-50 text-blue-600 rounded-lg">
+            <div className="shrink-0 rounded-lg bg-blue-50 p-3 text-blue-600">
               <Users size={22} />
             </div>
 
@@ -93,7 +105,7 @@ function Community() {
 
         </div>
 
-        <div className="bg-white border border-slate-200 rounded-xl p-5">
+        <div className="rounded-xl border border-slate-200 bg-white p-4 sm:p-5">
 
           <p className="text-sm text-slate-500">
             Active Members
@@ -109,7 +121,7 @@ function Community() {
 
         </div>
 
-        <div className="bg-white border border-slate-200 rounded-xl p-5">
+        <div className="rounded-xl border border-slate-200 bg-white p-4 sm:p-5">
 
           <p className="text-sm text-slate-500">
             Serving
@@ -128,31 +140,32 @@ function Community() {
       </div>
 
       {/* Search */}
-      <div className="bg-white border border-slate-200 rounded-xl p-4">
+      <div className="rounded-xl border border-slate-200 bg-white p-3 sm:p-4">
 
-        <div className="flex items-center gap-3 border border-slate-200 rounded-lg px-4 py-2.5 max-w-lg">
+        <div className="flex max-w-lg items-center gap-3 rounded-lg border border-slate-200 px-4 py-3 sm:py-2.5">
 
           <Search
             size={19}
-            className="text-slate-400"
+            className="shrink-0 text-slate-400"
           />
 
+          {/* text-base on phones stops iOS zooming in on focus */}
           <input
             type="text"
             placeholder="Search community members..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full outline-none text-sm"
+            className="w-full min-w-0 text-base outline-none sm:text-sm"
           />
 
         </div>
 
       </div>
 
-      {/* Members Table */}
-      <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
+      {/* Members */}
+      <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
 
-        <div className="flex items-center justify-between p-6 border-b border-slate-200">
+        <div className="flex items-center justify-between gap-3 border-b border-slate-200 p-4 sm:p-6">
 
           <div>
 
@@ -160,7 +173,7 @@ function Community() {
               Community Members
             </h2>
 
-            <p className="text-sm text-slate-400 mt-1">
+            <p className="mt-1 text-sm text-slate-400">
               {filteredMembers.length} member
               {filteredMembers.length !== 1 ? 's' : ''}
             </p>
@@ -177,75 +190,192 @@ function Community() {
 
         </div>
 
-        <div className="overflow-x-auto">
+        {/* Empty state (shared by card list and table) */}
+        {filteredMembers.length === 0 && (
+          <div className="px-6 py-12 text-center">
 
-          <table className="w-full">
+            <UserRound
+              size={40}
+              className="mx-auto text-slate-300"
+            />
 
-            <thead className="bg-slate-50 border-b border-slate-200">
+            <p className="mt-3 font-medium text-slate-600">
+              No community members found
+            </p>
 
-              <tr>
+            <p className="mt-1 text-sm text-slate-400">
+              {search
+                ? 'Try changing your search.'
+                : 'Add your first community member.'}
+            </p>
 
-                <th className="text-left px-6 py-4 text-xs font-semibold text-slate-500 uppercase">
-                  Member
-                </th>
+          </div>
+        )}
 
-                <th className="text-left px-6 py-4 text-xs font-semibold text-slate-500 uppercase">
-                  Phone
-                </th>
+        {/* Phones: card list */}
+        {filteredMembers.length > 0 && (
+          <ul className="divide-y divide-slate-100 md:hidden">
 
-                <th className="text-left px-6 py-4 text-xs font-semibold text-slate-500 uppercase">
-                  Department
-                </th>
+            {filteredMembers.map((member) => (
 
-                <th className="text-left px-6 py-4 text-xs font-semibold text-slate-500 uppercase">
-                  Accountability
-                </th>
+              <li key={member.id} className="p-4">
 
-                <th className="text-left px-6 py-4 text-xs font-semibold text-slate-500 uppercase">
-                  Status
-                </th>
+                <div className="flex items-start gap-3">
 
-                <th></th>
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-slate-100 font-semibold text-slate-600">
+                    {getInitials(member.name)}
+                  </div>
 
-              </tr>
+                  <div className="min-w-0 flex-1">
 
-            </thead>
+                    <p className="truncate font-medium text-slate-700">
+                      {member.name}
+                    </p>
 
-            <tbody className="divide-y divide-slate-100">
+                    <div className="mt-1 flex flex-wrap gap-2">
 
-              {filteredMembers.length > 0 ? (
+                      {member.department ? (
+                        <span className="rounded-full bg-blue-50 px-3 py-1 text-xs text-blue-700">
+                          {member.department}
+                        </span>
+                      ) : (
+                        <span className="rounded-full bg-slate-100 px-3 py-1 text-xs text-slate-500">
+                          No department
+                        </span>
+                      )}
 
-                filteredMembers.map((member) => (
+                      <span className="rounded-full bg-green-50 px-3 py-1 text-xs text-green-700">
+                        {member.status || 'Active'}
+                      </span>
+
+                    </div>
+
+                  </div>
+
+                  <button
+                    type="button"
+                    aria-label={`Actions for ${member.name}`}
+                    className="-mr-1 shrink-0 rounded-lg p-2.5 hover:bg-slate-100"
+                  >
+                    <MoreVertical
+                      size={18}
+                      className="text-slate-500"
+                    />
+                  </button>
+
+                </div>
+
+                <dl className="mt-3 space-y-2 text-sm text-slate-600">
+
+                  <div className="flex items-center gap-2">
+                    <Phone
+                      size={15}
+                      className="shrink-0 text-slate-400"
+                    />
+                    <dd>
+                      {member.phone ? (
+                        <a
+                          href={`tel:${member.phone}`}
+                          className="text-blue-600"
+                        >
+                          {member.phone}
+                        </a>
+                      ) : (
+                        '—'
+                      )}
+                    </dd>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <Mail
+                      size={15}
+                      className="shrink-0 text-slate-400"
+                    />
+                    <dd className="min-w-0 truncate">
+                      {member.email || 'No email'}
+                    </dd>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <Users
+                      size={15}
+                      className="shrink-0 text-slate-400"
+                    />
+                    <dd>
+                      {member.group || 'Not assigned'}
+                    </dd>
+                  </div>
+
+                </dl>
+
+              </li>
+
+            ))}
+
+          </ul>
+        )}
+
+        {/* Tablet and desktop: table */}
+        {filteredMembers.length > 0 && (
+          <div className="hidden overflow-x-auto md:block">
+
+            <table className="w-full min-w-[720px]">
+
+              <thead className="border-b border-slate-200 bg-slate-50">
+
+                <tr>
+
+                  <th className="px-4 py-4 text-left text-xs font-semibold uppercase text-slate-500 lg:px-6">
+                    Member
+                  </th>
+
+                  <th className="px-4 py-4 text-left text-xs font-semibold uppercase text-slate-500 lg:px-6">
+                    Phone
+                  </th>
+
+                  <th className="px-4 py-4 text-left text-xs font-semibold uppercase text-slate-500 lg:px-6">
+                    Department
+                  </th>
+
+                  <th className="px-4 py-4 text-left text-xs font-semibold uppercase text-slate-500 lg:px-6">
+                    Accountability
+                  </th>
+
+                  <th className="px-4 py-4 text-left text-xs font-semibold uppercase text-slate-500 lg:px-6">
+                    Status
+                  </th>
+
+                  <th></th>
+
+                </tr>
+
+              </thead>
+
+              <tbody className="divide-y divide-slate-100">
+
+                {filteredMembers.map((member) => (
 
                   <tr
                     key={member.id}
-                    className="hover:bg-slate-50 transition"
+                    className="transition hover:bg-slate-50"
                   >
 
                     {/* Member */}
-                    <td className="px-6 py-4">
+                    <td className="px-4 py-4 lg:px-6">
 
                       <div className="flex items-center gap-3">
 
-                        <div className="flex items-center justify-center w-10 h-10 bg-slate-100 text-slate-600 rounded-full font-semibold">
-
-                          {(member.name || '?')
-                            .split(' ')
-                            .filter(Boolean)
-                            .map((word) => word[0])
-                            .join('')
-                            .slice(0, 2)
-                            .toUpperCase()}
-
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-slate-100 font-semibold text-slate-600">
+                          {getInitials(member.name)}
                         </div>
 
-                        <div>
+                        <div className="min-w-0">
 
                           <p className="font-medium text-slate-700">
                             {member.name}
                           </p>
 
-                          <p className="text-xs text-slate-400">
+                          <p className="max-w-[200px] truncate text-xs text-slate-400">
                             {member.email || 'No email'}
                           </p>
 
@@ -256,19 +386,19 @@ function Community() {
                     </td>
 
                     {/* Phone */}
-                    <td className="px-6 py-4 text-sm text-slate-600">
+                    <td className="whitespace-nowrap px-4 py-4 text-sm text-slate-600 lg:px-6">
                       {member.phone || '—'}
                     </td>
 
                     {/* Department */}
-                    <td className="px-6 py-4">
+                    <td className="px-4 py-4 lg:px-6">
 
                       {member.department ? (
-                        <span className="px-3 py-1 text-xs rounded-full bg-blue-50 text-blue-700">
+                        <span className="rounded-full bg-blue-50 px-3 py-1 text-xs text-blue-700">
                           {member.department}
                         </span>
                       ) : (
-                        <span className="text-sm text-slate-400">
+                        <span className="whitespace-nowrap text-sm text-slate-400">
                           Not assigned
                         </span>
                       )}
@@ -276,25 +406,26 @@ function Community() {
                     </td>
 
                     {/* Accountability */}
-                    <td className="px-6 py-4 text-sm text-slate-600">
+                    <td className="px-4 py-4 text-sm text-slate-600 lg:px-6">
                       {member.group || 'Not assigned'}
                     </td>
 
                     {/* Status */}
-                    <td className="px-6 py-4">
+                    <td className="px-4 py-4 lg:px-6">
 
-                      <span className="px-3 py-1 text-xs rounded-full bg-green-50 text-green-700">
+                      <span className="rounded-full bg-green-50 px-3 py-1 text-xs text-green-700">
                         {member.status || 'Active'}
                       </span>
 
                     </td>
 
                     {/* Actions */}
-                    <td className="px-6 py-4">
+                    <td className="px-4 py-4 lg:px-6">
 
                       <button
                         type="button"
-                        className="p-2 hover:bg-slate-100 rounded-lg"
+                        aria-label={`Actions for ${member.name}`}
+                        className="rounded-lg p-2 hover:bg-slate-100"
                       >
                         <MoreVertical
                           size={18}
@@ -306,43 +437,14 @@ function Community() {
 
                   </tr>
 
-                ))
+                ))}
 
-              ) : (
+              </tbody>
 
-                <tr>
+            </table>
 
-                  <td
-                    colSpan="6"
-                    className="px-6 py-12 text-center"
-                  >
-
-                    <UserRound
-                      size={40}
-                      className="mx-auto text-slate-300"
-                    />
-
-                    <p className="mt-3 font-medium text-slate-600">
-                      No community members found
-                    </p>
-
-                    <p className="mt-1 text-sm text-slate-400">
-                      {search
-                        ? 'Try changing your search.'
-                        : 'Add your first community member.'}
-                    </p>
-
-                  </td>
-
-                </tr>
-
-              )}
-
-            </tbody>
-
-          </table>
-
-        </div>
+          </div>
+        )}
 
       </div>
 

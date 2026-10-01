@@ -15,6 +15,7 @@ import Departments from './pages/Departments'
 import AddDepartment from './pages/AddDepartment'
 import Groups from './pages/Groups'
 import AddGroup from './pages/AddGroup'
+import Settings from './pages/Settings'
 
 function App() {
   return (
@@ -47,6 +48,8 @@ function App() {
             <Route path="/groups" element={<Groups />} />
 
             <Route path="/groups/add" element={<AddGroup />} />
+
+            <Route path="/settings" element={<Settings />} />
 
           </Route>
 
