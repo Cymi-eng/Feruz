@@ -14,6 +14,9 @@ import {
   X,
 } from 'lucide-react'
 
+import { useMembers } from '../context/MemberContext'
+
+
 const YEARS = [
   'First Year',
   'Second Year',
@@ -21,26 +24,19 @@ const YEARS = [
   'Fourth Year',
 ]
 
-const ACCOUNTABILITY_GROUPS = [
-  'Group 1',
-  'Group 2',
-  'Group 3',
-  'Group 4',
-  'Group 5',
-  'Group 6',
-  'Group 7',
-]
 
 const GENDERS = [
   'Male',
   'Female',
 ]
 
+
 const STATUS_OPTIONS = [
   'Active',
   'Inactive',
   'Graduated',
 ]
+
 
 const INITIAL_FORM = {
   admissionNumber: '',
@@ -61,20 +57,44 @@ const INITIAL_FORM = {
   status: 'Active',
 }
 
+
 function AddStudent() {
+
   const navigate = useNavigate()
 
+  const {
+    members,
+    addMember,
+    groups,
+  } = useMembers()
+
+
   const [form, setForm] = useState(INITIAL_FORM)
+
   const [errors, setErrors] = useState({})
+
   const [success, setSuccess] = useState(false)
 
+  const [isSaving, setIsSaving] = useState(false)
+
+
+  /* ==========================================================
+     HANDLE INPUT
+  ========================================================== */
+
   function handleChange(event) {
-    const { name, value } = event.target
+
+    const {
+      name,
+      value,
+    } = event.target
+
 
     setForm((current) => ({
       ...current,
       [name]: value,
     }))
+
 
     setErrors((current) => ({
       ...current,
@@ -82,83 +102,256 @@ function AddStudent() {
     }))
   }
 
+
+  /* ==========================================================
+     VALIDATE FORM
+  ========================================================== */
+
   function validateForm() {
+
     const newErrors = {}
 
-    if (!form.admissionNumber.trim()) {
+    const admissionNumber =
+      form.admissionNumber.trim()
+
+
+    if (!admissionNumber) {
+
       newErrors.admissionNumber =
         'Admission number is required.'
+
     }
+
+
+    /* ------------------------------------------
+       Duplicate admission number
+    ------------------------------------------ */
+
+    const duplicateAdmissionNumber =
+      members.some(
+        (member) =>
+          String(member.admissionNumber || '')
+            .trim()
+            .toLowerCase() ===
+          admissionNumber.toLowerCase()
+      )
+
+
+    if (
+      admissionNumber &&
+      duplicateAdmissionNumber
+    ) {
+
+      newErrors.admissionNumber =
+        'This admission number is already registered.'
+
+    }
+
 
     if (!form.firstName.trim()) {
+
       newErrors.firstName =
         'First name is required.'
+
     }
+
 
     if (!form.lastName.trim()) {
+
       newErrors.lastName =
         'Last name is required.'
+
     }
+
 
     if (!form.gender) {
+
       newErrors.gender =
         'Please select the student gender.'
+
     }
+
 
     if (!form.phone.trim()) {
+
       newErrors.phone =
         'Phone number is required.'
+
     }
+
 
     if (!form.residence.trim()) {
+
       newErrors.residence =
         'Residence is required.'
+
     }
+
 
     if (!form.year) {
+
       newErrors.year =
         'Year of study is required.'
+
     }
 
+
     if (!form.accountabilityGroup) {
+
       newErrors.accountabilityGroup =
         'Accountability group is required.'
+
     }
+
 
     return newErrors
   }
 
+
+  /* ==========================================================
+     SAVE STUDENT
+  ========================================================== */
+
   function handleSubmit(event) {
+
     event.preventDefault()
 
-    const validationErrors = validateForm()
 
-    if (Object.keys(validationErrors).length > 0) {
-      setErrors(validationErrors)
+    if (isSaving) {
       return
     }
 
-    /*
-     * The form is validated here first.
-     *
-     * We will connect this to MemberContext / the backend
-     * after confirming the application's actual data-store API.
-     */
-    console.log('Student record:', form)
 
-    setSuccess(true)
+    const validationErrors =
+      validateForm()
 
-    setTimeout(() => {
-      navigate('/students')
-    }, 900)
+
+    if (
+      Object.keys(validationErrors).length > 0
+    ) {
+
+      setErrors(validationErrors)
+
+      return
+    }
+
+
+    setIsSaving(true)
+
+
+    const student = {
+
+      type: 'student',
+
+      admissionNumber:
+        form.admissionNumber.trim(),
+
+      firstName:
+        form.firstName.trim(),
+
+      middleName:
+        form.middleName.trim(),
+
+      lastName:
+        form.lastName.trim(),
+
+      name: [
+        form.firstName.trim(),
+        form.middleName.trim(),
+        form.lastName.trim(),
+      ]
+        .filter(Boolean)
+        .join(' '),
+
+      gender:
+        form.gender,
+
+      phone:
+        form.phone.trim(),
+
+      alternativePhone:
+        form.alternativePhone.trim(),
+
+      email:
+        form.email.trim(),
+
+      residence:
+        form.residence.trim(),
+
+      location:
+        form.location.trim(),
+
+      address:
+        form.address.trim(),
+
+      year:
+        form.year,
+
+      course:
+        form.course.trim(),
+
+      department:
+        form.department.trim(),
+
+      group:
+        form.accountabilityGroup,
+
+      accountabilityGroup:
+        form.accountabilityGroup,
+
+      status:
+        form.status,
+    }
+
+
+    try {
+
+      addMember(student)
+
+      setSuccess(true)
+
+      setIsSaving(false)
+
+
+      setTimeout(() => {
+        navigate('/students')
+      }, 900)
+
+    } catch (error) {
+
+      console.error(
+        'Failed to save student:',
+        error
+      )
+
+      setIsSaving(false)
+
+      setErrors({
+        submit:
+          'The student could not be saved. Please try again.',
+      })
+    }
   }
 
+
+  /* ==========================================================
+     CANCEL
+  ========================================================== */
+
   function handleCancel() {
+
+    if (isSaving) {
+      return
+    }
+
     navigate('/students')
   }
 
+
   return (
+
     <div className="mx-auto max-w-6xl space-y-6">
+
 
       {/* =====================================================
           HEADER
@@ -170,24 +363,32 @@ function AddStudent() {
 
           <button
             type="button"
-            onClick={() => navigate('/students')}
+            onClick={handleCancel}
             className="mb-4 inline-flex items-center gap-2 text-sm font-medium text-slate-500 transition hover:text-blue-600"
           >
+
             <ArrowLeft size={17} />
+
             Back to Students
+
           </button>
+
 
           <div className="flex items-center gap-3">
 
             <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+
               <GraduationCap size={25} />
+
             </div>
+
 
             <div>
 
               <h1 className="text-3xl font-bold tracking-tight text-slate-800">
                 Add Student
               </h1>
+
 
               <p className="mt-1 text-sm text-slate-500">
                 Register a student and assign their accountability group.
@@ -211,8 +412,11 @@ function AddStudent() {
         <div className="flex items-center gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-5 py-4 text-sm text-emerald-700">
 
           <div className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-100">
+
             <Save size={17} />
+
           </div>
+
 
           <div>
 
@@ -220,11 +424,27 @@ function AddStudent() {
               Student added successfully.
             </p>
 
+
             <p className="mt-0.5 text-emerald-600">
               Returning to the students list...
             </p>
 
           </div>
+
+        </div>
+
+      )}
+
+
+      {/* =====================================================
+          SUBMIT ERROR
+      ====================================================== */}
+
+      {errors.submit && (
+
+        <div className="rounded-xl border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-700">
+
+          {errors.submit}
 
         </div>
 
@@ -240,6 +460,7 @@ function AddStudent() {
         className="space-y-6"
       >
 
+
         {/* ===================================================
             PERSONAL INFORMATION
         ==================================================== */}
@@ -251,14 +472,18 @@ function AddStudent() {
             <div className="flex items-center gap-3">
 
               <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
+
                 <UserRound size={19} />
+
               </div>
+
 
               <div>
 
                 <h2 className="font-semibold text-slate-800">
                   Personal Information
                 </h2>
+
 
                 <p className="mt-1 text-xs text-slate-400">
                   Basic information about the student.
@@ -272,6 +497,7 @@ function AddStudent() {
 
 
           <div className="grid grid-cols-1 gap-5 p-6 md:grid-cols-2 lg:grid-cols-3">
+
 
             {/* Admission Number */}
 
@@ -287,6 +513,7 @@ function AddStudent() {
                   size={17}
                   className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"
                 />
+
 
                 <input
                   name="admissionNumber"
@@ -317,7 +544,9 @@ function AddStudent() {
                 value={form.firstName}
                 onChange={handleChange}
                 placeholder="Enter first name"
-                className={inputClass(errors.firstName)}
+                className={inputClass(
+                  errors.firstName
+                )}
               />
 
             </FormField>
@@ -351,7 +580,9 @@ function AddStudent() {
                 value={form.lastName}
                 onChange={handleChange}
                 placeholder="Enter last name"
-                className={inputClass(errors.lastName)}
+                className={inputClass(
+                  errors.lastName
+                )}
               />
 
             </FormField>
@@ -369,20 +600,25 @@ function AddStudent() {
                 name="gender"
                 value={form.gender}
                 onChange={handleChange}
-                className={inputClass(errors.gender)}
+                className={inputClass(
+                  errors.gender
+                )}
               >
 
                 <option value="">
                   Select gender
                 </option>
 
+
                 {GENDERS.map((gender) => (
+
                   <option
                     key={gender}
                     value={gender}
                   >
                     {gender}
                   </option>
+
                 ))}
 
               </select>
@@ -405,14 +641,18 @@ function AddStudent() {
             <div className="flex items-center gap-3">
 
               <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600">
+
                 <Phone size={19} />
+
               </div>
+
 
               <div>
 
                 <h2 className="font-semibold text-slate-800">
                   Contact Information
                 </h2>
+
 
                 <p className="mt-1 text-xs text-slate-400">
                   Contact details for accountability and communication.
@@ -427,7 +667,8 @@ function AddStudent() {
 
           <div className="grid grid-cols-1 gap-5 p-6 md:grid-cols-2 lg:grid-cols-3">
 
-            {/* Phone */}
+
+            {/* Primary Phone */}
 
             <FormField
               label="Primary Phone"
@@ -442,13 +683,17 @@ function AddStudent() {
                   className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"
                 />
 
+
                 <input
                   name="phone"
                   type="tel"
                   value={form.phone}
                   onChange={handleChange}
                   placeholder="e.g. 0712 345 678"
-                  className={inputClass(errors.phone, true)}
+                  className={inputClass(
+                    errors.phone,
+                    true
+                  )}
                 />
 
               </div>
@@ -483,13 +728,17 @@ function AddStudent() {
                   className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"
                 />
 
+
                 <input
                   name="email"
                   type="email"
                   value={form.email}
                   onChange={handleChange}
                   placeholder="student@example.com"
-                  className={inputClass(false, true)}
+                  className={inputClass(
+                    false,
+                    true
+                  )}
                 />
 
               </div>
@@ -512,14 +761,18 @@ function AddStudent() {
             <div className="flex items-center gap-3">
 
               <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-orange-50 text-orange-600">
+
                 <MapPin size={19} />
+
               </div>
+
 
               <div>
 
                 <h2 className="font-semibold text-slate-800">
                   Residence Information
                 </h2>
+
 
                 <p className="mt-1 text-xs text-slate-400">
                   Where the student currently lives.
@@ -534,6 +787,7 @@ function AddStudent() {
 
           <div className="grid grid-cols-1 gap-5 p-6 md:grid-cols-2">
 
+
             {/* Residence */}
 
             <FormField
@@ -547,7 +801,9 @@ function AddStudent() {
                 value={form.residence}
                 onChange={handleChange}
                 placeholder="e.g. Main Campus Hostel"
-                className={inputClass(errors.residence)}
+                className={inputClass(
+                  errors.residence
+                )}
               />
 
             </FormField>
@@ -603,14 +859,18 @@ function AddStudent() {
             <div className="flex items-center gap-3">
 
               <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-purple-50 text-purple-600">
+
                 <BookOpen size={19} />
+
               </div>
+
 
               <div>
 
                 <h2 className="font-semibold text-slate-800">
                   Academic Information
                 </h2>
+
 
                 <p className="mt-1 text-xs text-slate-400">
                   Student's current academic classification.
@@ -625,6 +885,7 @@ function AddStudent() {
 
           <div className="grid grid-cols-1 gap-5 p-6 md:grid-cols-2 lg:grid-cols-3">
 
+
             {/* Year */}
 
             <FormField
@@ -637,20 +898,25 @@ function AddStudent() {
                 name="year"
                 value={form.year}
                 onChange={handleChange}
-                className={inputClass(errors.year)}
+                className={inputClass(
+                  errors.year
+                )}
               >
 
                 <option value="">
                   Select year
                 </option>
 
+
                 {YEARS.map((year) => (
+
                   <option
                     key={year}
                     value={year}
                   >
                     {year}
                   </option>
+
                 ))}
 
               </select>
@@ -703,14 +969,18 @@ function AddStudent() {
             <div className="flex items-center gap-3">
 
               <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600">
+
                 <Users size={19} />
+
               </div>
+
 
               <div>
 
                 <h2 className="font-semibold text-slate-800">
                   Church Accountability
                 </h2>
+
 
                 <p className="mt-1 text-xs text-slate-400">
                   Assign the student to one of the seven accountability groups.
@@ -724,6 +994,7 @@ function AddStudent() {
 
 
           <div className="grid grid-cols-1 gap-5 p-6 md:grid-cols-2">
+
 
             {/* Accountability Group */}
 
@@ -746,13 +1017,16 @@ function AddStudent() {
                   Select accountability group
                 </option>
 
-                {ACCOUNTABILITY_GROUPS.map((group) => (
+
+                {groups.map((group) => (
+
                   <option
                     key={group}
                     value={group}
                   >
                     {group}
                   </option>
+
                 ))}
 
               </select>
@@ -772,12 +1046,14 @@ function AddStudent() {
               >
 
                 {STATUS_OPTIONS.map((status) => (
+
                   <option
                     key={status}
                     value={status}
                   >
                     {status}
                   </option>
+
                 ))}
 
               </select>
@@ -798,11 +1074,13 @@ function AddStudent() {
                 className="mt-0.5 shrink-0 text-blue-600"
               />
 
+
               <div>
 
                 <p className="text-sm font-medium text-blue-800">
                   Accountability is important
                 </p>
+
 
                 <p className="mt-1 text-xs leading-5 text-blue-600">
                   Every active student should belong to one accountability
@@ -828,20 +1106,31 @@ function AddStudent() {
           <button
             type="button"
             onClick={handleCancel}
-            className="inline-flex items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-5 py-3 text-sm font-medium text-slate-600 transition hover:bg-slate-50"
+            disabled={isSaving}
+            className="inline-flex items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-5 py-3 text-sm font-medium text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
           >
+
             <X size={17} />
+
             Cancel
+
           </button>
 
 
           <button
             type="submit"
-            disabled={success}
+            disabled={isSaving || success}
             className="inline-flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
           >
+
             <Save size={17} />
-            Save Student
+
+            {isSaving
+              ? 'Saving Student...'
+              : success
+                ? 'Student Saved'
+                : 'Save Student'}
+
           </button>
 
         </div>
@@ -863,7 +1152,9 @@ function FormField({
   error,
   children,
 }) {
+
   return (
+
     <div>
 
       <label className="mb-2 block text-sm font-medium text-slate-700">
@@ -871,19 +1162,25 @@ function FormField({
         {label}
 
         {required && (
+
           <span className="ml-1 text-red-500">
             *
           </span>
+
         )}
 
       </label>
 
+
       {children}
 
+
       {error && (
+
         <p className="mt-1.5 text-xs text-red-600">
           {error}
         </p>
+
       )}
 
     </div>
@@ -895,14 +1192,21 @@ function FormField({
    INPUT CLASS
 ============================================================= */
 
-function inputClass(error, withIcon = false) {
+function inputClass(
+  error,
+  withIcon = false
+) {
+
   return `w-full rounded-lg border ${
     error
       ? 'border-red-300 focus:border-red-500 focus:ring-red-100'
       : 'border-slate-200 focus:border-blue-500 focus:ring-blue-100'
   } ${
-    withIcon ? 'pl-10' : 'px-4'
+    withIcon
+      ? 'pl-10'
+      : 'px-4'
   } py-3 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 focus:ring-2`
 }
+
 
 export default AddStudent
