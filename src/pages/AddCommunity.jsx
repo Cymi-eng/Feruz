@@ -6,12 +6,17 @@ import { useMembers } from '../context/MemberContext'
 
 function AddCommunity() {
   const navigate = useNavigate()
-  const { addMember, departments, groups } = useMembers()
+  const {
+    addMember,
+    departments = [],
+    groups = [],
+  } = useMembers()
 
   const [formData, setFormData] = useState({
     firstName: '',
     middleName: '',
     lastName: '',
+    gender: '',
     phone: '',
     alternativePhone: '',
     email: '',
@@ -23,6 +28,9 @@ function AddCommunity() {
     status: 'Active',
   })
 
+  const [isSaving, setIsSaving] = useState(false)
+  const [error, setError] = useState('')
+
   const handleChange = (e) => {
     const { name, value } = e.target
 
@@ -32,32 +40,91 @@ function AddCommunity() {
     }))
   }
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
 
+    if (isSaving) return
+
+    setError('')
+
+    const firstName = formData.firstName.trim()
+    const middleName = formData.middleName.trim()
+    const lastName = formData.lastName.trim()
+    const phone = formData.phone.trim()
+
+    if (!firstName || !lastName || !phone) {
+      setError(
+        'Please provide the first name, last name, and phone number.'
+      )
+      return
+    }
+
     const fullName = [
-      formData.firstName,
-      formData.middleName,
-      formData.lastName,
+      firstName,
+      middleName,
+      lastName,
     ]
       .filter(Boolean)
       .join(' ')
 
-    addMember({
-      name: fullName,
-      email: formData.email,
-      phone: formData.phone,
-      alternativePhone: formData.alternativePhone,
+    const communityMember = {
       type: 'community',
-      residence: formData.residence,
-      location: formData.location,
-      address: formData.address,
-      department: formData.department,
-      group: formData.group,
-      status: formData.status,
-    })
 
-    navigate('/community')
+      name: fullName,
+
+      firstName,
+      middleName,
+      lastName,
+
+      gender: formData.gender,
+
+      email: formData.email.trim(),
+
+      phone,
+
+      alternativePhone:
+        formData.alternativePhone.trim(),
+
+      residence:
+        formData.residence.trim(),
+
+      location:
+        formData.location.trim(),
+
+      address:
+        formData.address.trim(),
+
+      department:
+        formData.department,
+
+      group:
+        formData.group,
+
+      accountabilityGroup:
+        formData.group,
+
+      status:
+        formData.status,
+    }
+
+    setIsSaving(true)
+
+    try {
+      await addMember(communityMember)
+
+      navigate('/community')
+    } catch (err) {
+      console.error(
+        'Failed to save community member:',
+        err
+      )
+
+      setError(
+        'The community member could not be saved. Please check your Firebase connection and try again.'
+      )
+    } finally {
+      setIsSaving(false)
+    }
   }
 
   return (
@@ -71,7 +138,10 @@ function AddCommunity() {
           onClick={() => navigate('/community')}
           className="p-2.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 transition"
         >
-          <ArrowLeft size={20} className="text-slate-600" />
+          <ArrowLeft
+            size={20}
+            className="text-slate-600"
+          />
         </button>
 
         <div>
@@ -93,6 +163,13 @@ function AddCommunity() {
         </div>
 
       </div>
+
+      {/* Error */}
+      {error && (
+        <div className="p-4 rounded-lg border border-red-200 bg-red-50 text-red-700 text-sm">
+          {error}
+        </div>
+      )}
 
       {/* Form */}
       <form
@@ -158,6 +235,29 @@ function AddCommunity() {
                 placeholder="Last name"
                 className="w-full px-4 py-2.5 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-blue-500"
               />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-2">
+                Gender
+              </label>
+
+              <select
+                name="gender"
+                value={formData.gender}
+                onChange={handleChange}
+                className="w-full px-4 py-2.5 border border-slate-200 rounded-lg bg-white outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="">
+                  Select gender
+                </option>
+                <option value="Male">
+                  Male
+                </option>
+                <option value="Female">
+                  Female
+                </option>
+              </select>
             </div>
 
           </div>
@@ -327,7 +427,10 @@ function AddCommunity() {
                 </option>
 
                 {groups.map((group) => (
-                  <option key={group} value={group}>
+                  <option
+                    key={group}
+                    value={group}
+                  >
                     {group}
                   </option>
                 ))}
@@ -345,8 +448,13 @@ function AddCommunity() {
                 onChange={handleChange}
                 className="w-full px-4 py-2.5 border border-slate-200 rounded-lg bg-white outline-none focus:ring-2 focus:ring-blue-500"
               >
-                <option value="Active">Active</option>
-                <option value="Inactive">Inactive</option>
+                <option value="Active">
+                  Active
+                </option>
+
+                <option value="Inactive">
+                  Inactive
+                </option>
               </select>
             </div>
 
@@ -360,17 +468,22 @@ function AddCommunity() {
           <button
             type="button"
             onClick={() => navigate('/community')}
-            className="px-5 py-2.5 border border-slate-200 bg-white text-slate-600 rounded-lg hover:bg-slate-100 transition"
+            disabled={isSaving}
+            className="px-5 py-2.5 border border-slate-200 bg-white text-slate-600 rounded-lg hover:bg-slate-100 transition disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Cancel
           </button>
 
           <button
             type="submit"
-            className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+            disabled={isSaving}
+            className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition disabled:opacity-60 disabled:cursor-not-allowed"
           >
             <Save size={18} />
-            Save Community Member
+
+            {isSaving
+              ? 'Saving...'
+              : 'Save Community Member'}
           </button>
 
         </div>
