@@ -303,7 +303,7 @@ function Login() {
             </div>
 
             <h1 className="mt-5 text-2xl font-bold text-slate-800">
-              Church Management System
+              Fellowship-Management-Sytem
             </h1>
 
             <p className="mt-2 text-sm text-slate-500">
@@ -482,7 +482,7 @@ function Login() {
           </div>
 
           <p className="mt-6 text-center text-xs text-slate-400">
-            Church Management System
+            MuRhsf-Fellowship-Records
           </p>
 
         </div>
