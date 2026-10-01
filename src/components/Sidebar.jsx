@@ -1,159 +1,141 @@
-jsx
+
 import {
   LayoutDashboard,
   Users,
+  GraduationCap,
   UserRound,
-  UsersRound,
   Building2,
-  Wallet,
-  BarChart3,
+  UsersRound,
   Settings,
   LogOut,
 } from 'lucide-react'
-import { useNavigate } from 'react-router-dom'
+
+import { NavLink } from 'react-router-dom'
 
 import churchLogo from '../assets/rhsf.jpeg'
 
-function Sidebar({
-  activePage,
-  setActivePage,
-  isOpen,
-  onClose,
-}) {
-  const navigate = useNavigate()
-
-  const navigation = [
+function Sidebar() {
+  const menuItems = [
     {
       name: 'Dashboard',
-      icon: LayoutDashboard,
       path: '/',
+      icon: LayoutDashboard,
     },
     {
-      name: 'Members',
-      icon: Users,
+      name: 'All Members',
       path: '/members',
+      icon: Users,
+    },
+    {
+      name: 'Students',
+      path: '/students',
+      icon: GraduationCap,
+    },
+    {
+      name: 'Community',
+      path: '/community',
+      icon: UserRound,
     },
     {
       name: 'Departments',
-      icon: Building2,
       path: '/departments',
+      icon: Building2,
     },
     {
-      name: 'Groups',
+      name: 'Accountability',
+      path: '/accountability',
       icon: UsersRound,
-      path: '/groups',
-    },
-    {
-      name: 'Attendance',
-      icon: UserRound,
-      path: '/attendance',
-    },
-    {
-      name: 'Giving',
-      icon: Wallet,
-      path: '/giving',
-    },
-    {
-      name: 'Reports',
-      icon: BarChart3,
-      path: '/reports',
     },
   ]
 
-  const handleNavigation = (item) => {
-    setActivePage?.(item.name)
-    navigate(item.path)
-    onClose?.()
-  }
-
-  const handleLogout = () => {
-    localStorage.removeItem('church-auth')
-    navigate('/login')
-  }
-
   return (
-    <>
-      {isOpen && (
-        <div
-          className="fixed inset-0 z-30 bg-black/40 lg:hidden"
-          onClick={onClose}
-        />
-      )}
+    <aside className="fixed left-0 top-0 z-40 h-screen w-64 bg-slate-900 text-white">
 
-      <aside
-        className={`fixed inset-y-0 left-0 z-40 flex w-64 flex-col bg-white shadow-xl transition-transform duration-300 lg:static lg:translate-x-0 ${
-          isOpen ? 'translate-x-0' : '-translate-x-full'
-        }`}
-      >
-        {/* Branding */}
-        <div className="flex h-20 items-center gap-3 border-b border-slate-200 px-5">
-          <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-white shadow-sm ring-1 ring-slate-200">
-            <img
-              src={churchLogo}
-              alt="Church logo"
-              className="h-full w-full object-cover"
-            />
-          </div>
+      {/* Logo */}
 
-          <div className="min-w-0">
-            <h1 className="truncate text-sm font-bold text-slate-800">
-              Church System
-            </h1>
+      <div className="flex h-20 items-center gap-3 border-b border-slate-800 px-6">
 
-            <p className="truncate text-xs text-slate-500">
-              Management Portal
-            </p>
-          </div>
+        <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full bg-white shadow-md ring-2 ring-blue-500/30">
+          <img
+            src={churchLogo}
+            alt="Fellowship logo"
+            className="h-full w-full object-cover"
+          />
         </div>
 
-        {/* Navigation */}
-        <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-5">
-          {navigation.map((item) => {
+        <div className="min-w-0">
+          <h1 className="truncate font-bold">
+            Fellowship-Records-Syystem
+          </h1>
+
+          <p className="text-xs text-slate-400">
+            Management Portal
+          </p>
+        </div>
+
+      </div>
+
+      {/* Navigation */}
+
+      <div className="px-4 py-6">
+
+        <p className="mb-3 px-3 text-xs font-semibold uppercase tracking-wider text-slate-500">
+          Main Menu
+        </p>
+
+        <nav className="space-y-1">
+
+          {menuItems.map((item) => {
             const Icon = item.icon
-            const isActive =
-              activePage === item.name ||
-              window.location.pathname === item.path
 
             return (
-              <button
-                key={item.name}
-                type="button"
-                onClick={() => handleNavigation(item)}
-                className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition ${
-                  isActive
-                    ? 'bg-blue-50 text-blue-600'
-                    : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
-                }`}
+              <NavLink
+                key={item.path}
+                to={item.path}
+                className={({ isActive }) =>
+                  `flex items-center gap-3 rounded-lg px-3 py-3 text-sm font-medium transition ${
+                    isActive
+                      ? 'bg-blue-600 text-white'
+                      : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                  }`
+                }
               >
                 <Icon size={19} />
-                <span>{item.name}</span>
-              </button>
+
+                {item.name}
+              </NavLink>
             )
           })}
+
         </nav>
 
-        {/* Bottom actions */}
-        <div className="border-t border-slate-200 p-3">
-          <button
-            type="button"
-            onClick={() => navigate('/settings')}
-            className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-slate-600 transition hover:bg-slate-50 hover:text-slate-900"
-          >
-            <Settings size={19} />
-            <span>Settings</span>
-          </button>
+      </div>
 
-          <button
-            type="button"
-            onClick={handleLogout}
-            className="mt-1 flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-red-600 transition hover:bg-red-50"
-          >
-            <LogOut size={19} />
-            <span>Logout</span>
-          </button>
-        </div>
-      </aside>
-    </>
+      {/* Bottom */}
+
+      <div className="absolute bottom-0 left-0 right-0 border-t border-slate-800 p-4">
+
+        <NavLink
+          to="/settings"
+          className="flex items-center gap-3 rounded-lg px-3 py-3 text-sm text-slate-300 hover:bg-slate-800"
+        >
+          <Settings size={19} />
+
+          Settings
+        </NavLink>
+
+        <button
+          type="button"
+          className="mt-1 flex w-full items-center gap-3 rounded-lg px-3 py-3 text-sm text-red-400 hover:bg-slate-800"
+        >
+          <LogOut size={19} />
+
+          Logout
+        </button>
+
+      </div>
+
+    </aside>
   )
 }
 
