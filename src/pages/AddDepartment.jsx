@@ -9,109 +9,193 @@ function AddDepartment({ onClose }) {
   const [leader, setLeader] = useState('')
   const [assistant, setAssistant] = useState('')
   const [rolesInput, setRolesInput] = useState('')
+  const [error, setError] = useState('')
 
-  const handleSubmit = (e) => {
-    e.preventDefault()
+  const handleSubmit = (event) => {
+    event.preventDefault()
 
-    if (!name.trim()) return
+    const cleanName = name.trim()
+    const cleanLeader = leader.trim()
+    const cleanAssistant = assistant.trim()
+
+    if (!cleanName) {
+      setError('Department name is required.')
+      return
+    }
 
     const roles = rolesInput
       .split(',')
       .map((role) => role.trim())
       .filter(Boolean)
 
-    addDepartment({ name: name.trim(), leader, assistant, roles })
+    const department = addDepartment({
+      name: cleanName,
+      leader: cleanLeader,
+      assistant: cleanAssistant,
+      roles,
+    })
+
+    if (!department) {
+      setError(
+        'A department with this name already exists.'
+      )
+      return
+    }
+
     onClose()
   }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
-      <div className="w-full max-w-md rounded-xl bg-white p-6">
 
-        <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-slate-900">
-            Add Department
-          </h2>
+      <div className="w-full max-w-md rounded-xl bg-white shadow-xl">
+
+        {/* ====================================================
+            HEADER
+        ==================================================== */}
+
+        <div className="flex items-center justify-between border-b border-slate-200 px-6 py-5">
+
+          <div>
+            <h2 className="text-lg font-semibold text-slate-900">
+              Add Department
+            </h2>
+
+            <p className="mt-1 text-sm text-slate-500">
+              Create a department and assign its leadership.
+            </p>
+          </div>
 
           <button
+            type="button"
             onClick={onClose}
-            className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+            className="rounded-lg p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
           >
             <X size={20} />
           </button>
+
         </div>
 
-        <form onSubmit={handleSubmit} className="mt-6 space-y-4">
+        {/* ====================================================
+            FORM
+        ==================================================== */}
+
+        <form
+          onSubmit={handleSubmit}
+          className="space-y-5 p-6"
+        >
+
+          {/* Department Name */}
 
           <div>
-            <label className="mb-1 block text-sm font-medium text-slate-700">
+            <label className="mb-2 block text-sm font-medium text-slate-700">
               Department Name
             </label>
+
             <input
               type="text"
               value={name}
-              onChange={(e) => setName(e.target.value)}
+              onChange={(event) => {
+                setName(event.target.value)
+                setError('')
+              }}
+              placeholder="e.g. Worship"
               required
-              className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+              className="w-full rounded-lg border border-slate-200 px-4 py-3 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
             />
           </div>
 
+          {/* Leader */}
+
           <div>
-            <label className="mb-1 block text-sm font-medium text-slate-700">
-              Leader
+            <label className="mb-2 block text-sm font-medium text-slate-700">
+              Department Leader
             </label>
+
             <input
               type="text"
               value={leader}
-              onChange={(e) => setLeader(e.target.value)}
-              className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+              onChange={(event) =>
+                setLeader(event.target.value)
+              }
+              placeholder="Enter leader name"
+              className="w-full rounded-lg border border-slate-200 px-4 py-3 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
             />
           </div>
 
+          {/* Assistant */}
+
           <div>
-            <label className="mb-1 block text-sm font-medium text-slate-700">
+            <label className="mb-2 block text-sm font-medium text-slate-700">
               Assistant
             </label>
+
             <input
               type="text"
               value={assistant}
-              onChange={(e) => setAssistant(e.target.value)}
-              className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+              onChange={(event) =>
+                setAssistant(event.target.value)
+              }
+              placeholder="Enter assistant name"
+              className="w-full rounded-lg border border-slate-200 px-4 py-3 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
             />
           </div>
 
+          {/* Roles */}
+
           <div>
-            <label className="mb-1 block text-sm font-medium text-slate-700">
-              Roles <span className="text-slate-400">(comma-separated)</span>
+            <label className="mb-2 block text-sm font-medium text-slate-700">
+              Department Roles
             </label>
+
             <input
               type="text"
               value={rolesInput}
-              onChange={(e) => setRolesInput(e.target.value)}
+              onChange={(event) =>
+                setRolesInput(event.target.value)
+              }
               placeholder="e.g. Usher, Welcome Team"
-              className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+              className="w-full rounded-lg border border-slate-200 px-4 py-3 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
             />
+
+            <p className="mt-1.5 text-xs text-slate-400">
+              Separate multiple roles with commas.
+            </p>
           </div>
 
-          <div className="flex justify-end gap-3 pt-2">
+          {/* Error */}
+
+          {error && (
+            <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
+              {error}
+            </div>
+          )}
+
+          {/* Buttons */}
+
+          <div className="flex justify-end gap-3 border-t border-slate-100 pt-5">
+
             <button
               type="button"
               onClick={onClose}
-              className="rounded-lg px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100"
+              className="rounded-lg border border-slate-200 px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
             >
               Cancel
             </button>
+
             <button
               type="submit"
-              className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+              className="rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-blue-700"
             >
               Add Department
             </button>
+
           </div>
 
         </form>
 
       </div>
+
     </div>
   )
 }
