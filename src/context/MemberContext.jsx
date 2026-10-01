@@ -5,31 +5,24 @@ import {
   useState,
 } from 'react'
 
+import {
+  collection,
+  getDocs,
+  addDoc,
+  updateDoc,
+  deleteDoc,
+  doc,
+} from 'firebase/firestore'
+
+import { db } from '../firebase'
+
 import { members as initialMembers } from '../data/members'
 
 const MemberContext = createContext()
 
-const MEMBERS_STORAGE_KEY = 'church-members'
-const DEPARTMENTS_STORAGE_KEY = 'church-departments'
-const GROUPS_STORAGE_KEY =
-  'church-accountability-groups'
-
-
-/* ============================================================
-   LOCAL STORAGE HELPERS
-============================================================ */
-
-const loadFromStorage = (key, fallback) => {
-  try {
-    const saved = localStorage.getItem(key)
-
-    return saved
-      ? JSON.parse(saved)
-      : fallback
-  } catch {
-    return fallback
-  }
-}
+const MEMBERS_COLLECTION = 'members'
+const DEPARTMENTS_COLLECTION = 'departments'
+const GROUPS_COLLECTION = 'groups'
 
 
 /* ============================================================
@@ -53,72 +46,172 @@ const initialGroups = [
 
 export function MemberProvider({ children }) {
 
-  const [members, setMembers] = useState(() =>
-    loadFromStorage(
-      MEMBERS_STORAGE_KEY,
-      initialMembers
-    )
-  )
+  const [members, setMembers] = useState([])
 
-  const [departments, setDepartments] = useState(() =>
-    loadFromStorage(
-      DEPARTMENTS_STORAGE_KEY,
-      []
-    )
-  )
+  const [departments, setDepartments] = useState([])
 
-  const [groups, setGroups] = useState(() =>
-    loadFromStorage(
-      GROUPS_STORAGE_KEY,
-      initialGroups
-    )
-  )
+  const [groups, setGroups] =
+    useState(initialGroups)
+
+  const [loading, setLoading] =
+    useState(true)
 
 
   /* ==========================================================
-     SAVE MEMBERS
+     LOAD FIRESTORE DATA
   ========================================================== */
 
   useEffect(() => {
-    localStorage.setItem(
-      MEMBERS_STORAGE_KEY,
-      JSON.stringify(members)
-    )
-  }, [members])
+
+    const loadData = async () => {
+
+      try {
+
+        setLoading(true)
 
 
-  /* ==========================================================
-     SAVE DEPARTMENTS
-  ========================================================== */
+        /* --------------------------------
+           MEMBERS
+        -------------------------------- */
 
-  useEffect(() => {
-    localStorage.setItem(
-      DEPARTMENTS_STORAGE_KEY,
-      JSON.stringify(departments)
-    )
-  }, [departments])
+        const membersSnapshot =
+          await getDocs(
+            collection(
+              db,
+              MEMBERS_COLLECTION
+            )
+          )
+
+        const firestoreMembers =
+          membersSnapshot.docs.map(
+            (item) => ({
+              id: item.id,
+              ...item.data(),
+            })
+          )
 
 
-  /* ==========================================================
-     SAVE ACCOUNTABILITY GROUPS
-  ========================================================== */
+        /*
+         * Keep the existing sample data
+         * available if Firestore is empty.
+         */
 
-  useEffect(() => {
-    localStorage.setItem(
-      GROUPS_STORAGE_KEY,
-      JSON.stringify(groups)
-    )
-  }, [groups])
+        setMembers(
+          firestoreMembers.length > 0
+            ? firestoreMembers
+            : initialMembers
+        )
+
+
+        /* --------------------------------
+           DEPARTMENTS
+        -------------------------------- */
+
+        const departmentsSnapshot =
+          await getDocs(
+            collection(
+              db,
+              DEPARTMENTS_COLLECTION
+            )
+          )
+
+        const firestoreDepartments =
+          departmentsSnapshot.docs.map(
+            (item) => ({
+              id: item.id,
+              ...item.data(),
+            })
+          )
+
+        setDepartments(
+          firestoreDepartments
+        )
+
+
+        /* --------------------------------
+           GROUPS
+        -------------------------------- */
+
+        const groupsSnapshot =
+          await getDocs(
+            collection(
+              db,
+              GROUPS_COLLECTION
+            )
+          )
+
+        const firestoreGroups =
+          groupsSnapshot.docs.map(
+            (item) => ({
+              id: item.id,
+              ...item.data(),
+            })
+          )
+
+
+        if (
+          firestoreGroups.length > 0
+        ) {
+
+          setGroups(
+            firestoreGroups.map(
+              (group) =>
+                group.name
+            )
+          )
+
+        } else {
+
+          /*
+           * Use the existing default groups
+           * until groups are created.
+           */
+
+          setGroups(initialGroups)
+
+        }
+
+      } catch (error) {
+
+        console.error(
+          'Failed to load Firestore data:',
+          error
+        )
+
+        /*
+         * Keep the application usable
+         * if Firebase is temporarily unavailable.
+         */
+
+        setMembers(initialMembers)
+
+        setDepartments([])
+
+        setGroups(initialGroups)
+
+      } finally {
+
+        setLoading(false)
+
+      }
+
+    }
+
+
+    loadData()
+
+  }, [])
 
 
   /* ==========================================================
      ADD MEMBER / STUDENT
   ========================================================== */
 
-  const addMember = (newMember) => {
+  const addMember = async (
+    newMember
+  ) => {
 
     const member = {
-      id: Date.now(),
 
       /* --------------------------------
          Basic identity
@@ -240,32 +333,61 @@ export function MemberProvider({ children }) {
 
       createdAt:
         new Date().toISOString(),
+
+      updatedAt:
+        new Date().toISOString(),
+
     }
 
 
-    console.log(
-      'MEMBER CREATED:',
-      member
-    )
+    try {
+
+      const document =
+        await addDoc(
+          collection(
+            db,
+            MEMBERS_COLLECTION
+          ),
+          member
+        )
 
 
-    setMembers((currentMembers) => {
+      const savedMember = {
 
-      const updatedMembers = [
-        ...currentMembers,
-        member,
-      ]
+        id: document.id,
 
-      console.log(
-        'ALL MEMBERS:',
-        updatedMembers
+        ...member,
+
+      }
+
+
+      setMembers(
+        (currentMembers) => [
+          ...currentMembers,
+          savedMember,
+        ]
       )
 
-      return updatedMembers
-    })
+
+      console.log(
+        'MEMBER CREATED:',
+        savedMember
+      )
 
 
-    return member
+      return savedMember
+
+    } catch (error) {
+
+      console.error(
+        'Failed to create member:',
+        error
+      )
+
+      throw error
+
+    }
+
   }
 
 
@@ -273,23 +395,57 @@ export function MemberProvider({ children }) {
      UPDATE MEMBER
   ========================================================== */
 
-  const updateMember = (
+  const updateMember = async (
     memberId,
     updates
   ) => {
 
-    setMembers((currentMembers) =>
-      currentMembers.map((member) =>
-        member.id === memberId
-          ? {
-              ...member,
-              ...updates,
-              updatedAt:
-                new Date().toISOString(),
-            }
-          : member
+    try {
+
+      const updatedMember = {
+
+        ...updates,
+
+        updatedAt:
+          new Date().toISOString(),
+
+      }
+
+
+      await updateDoc(
+        doc(
+          db,
+          MEMBERS_COLLECTION,
+          memberId
+        ),
+        updatedMember
       )
-    )
+
+
+      setMembers(
+        (currentMembers) =>
+          currentMembers.map(
+            (member) =>
+              member.id === memberId
+                ? {
+                    ...member,
+                    ...updatedMember,
+                  }
+                : member
+          )
+      )
+
+    } catch (error) {
+
+      console.error(
+        'Failed to update member:',
+        error
+      )
+
+      throw error
+
+    }
+
   }
 
 
@@ -297,14 +453,40 @@ export function MemberProvider({ children }) {
      DELETE MEMBER
   ========================================================== */
 
-  const deleteMember = (memberId) => {
+  const deleteMember = async (
+    memberId
+  ) => {
 
-    setMembers((currentMembers) =>
-      currentMembers.filter(
-        (member) =>
-          member.id !== memberId
+    try {
+
+      await deleteDoc(
+        doc(
+          db,
+          MEMBERS_COLLECTION,
+          memberId
+        )
       )
-    )
+
+
+      setMembers(
+        (currentMembers) =>
+          currentMembers.filter(
+            (member) =>
+              member.id !== memberId
+          )
+      )
+
+    } catch (error) {
+
+      console.error(
+        'Failed to delete member:',
+        error
+      )
+
+      throw error
+
+    }
+
   }
 
 
@@ -312,12 +494,15 @@ export function MemberProvider({ children }) {
      GET MEMBER
   ========================================================== */
 
-  const getMember = (memberId) => {
+  const getMember = (
+    memberId
+  ) => {
 
     return members.find(
       (member) =>
         member.id === memberId
     )
+
   }
 
 
@@ -325,7 +510,7 @@ export function MemberProvider({ children }) {
      ADD DEPARTMENT
   ========================================================== */
 
-  const addDepartment = ({
+  const addDepartment = async ({
     name,
     leader = '',
     assistant = '',
@@ -335,9 +520,11 @@ export function MemberProvider({ children }) {
     const cleanName =
       name?.trim()
 
+
     if (!cleanName) {
       return null
     }
+
 
     const alreadyExists =
       departments.some(
@@ -347,12 +534,13 @@ export function MemberProvider({ children }) {
           cleanName.toLowerCase()
       )
 
+
     if (alreadyExists) {
       return null
     }
 
+
     const department = {
-      id: Date.now(),
 
       name: cleanName,
 
@@ -366,16 +554,55 @@ export function MemberProvider({ children }) {
 
       createdAt:
         new Date().toISOString(),
+
+      updatedAt:
+        new Date().toISOString(),
+
     }
 
-    setDepartments(
-      (currentDepartments) => [
-        ...currentDepartments,
-        department,
-      ]
-    )
 
-    return department
+    try {
+
+      const document =
+        await addDoc(
+          collection(
+            db,
+            DEPARTMENTS_COLLECTION
+          ),
+          department
+        )
+
+
+      const savedDepartment = {
+
+        id: document.id,
+
+        ...department,
+
+      }
+
+
+      setDepartments(
+        (currentDepartments) => [
+          ...currentDepartments,
+          savedDepartment,
+        ]
+      )
+
+
+      return savedDepartment
+
+    } catch (error) {
+
+      console.error(
+        'Failed to create department:',
+        error
+      )
+
+      throw error
+
+    }
+
   }
 
 
@@ -383,7 +610,7 @@ export function MemberProvider({ children }) {
      UPDATE DEPARTMENT
   ========================================================== */
 
-  const updateDepartment = (
+  const updateDepartment = async (
     departmentId,
     updates
   ) => {
@@ -395,15 +622,19 @@ export function MemberProvider({ children }) {
           departmentId
       )
 
+
     if (!existingDepartment) {
       return
     }
+
 
     const updatedName =
       updates.name?.trim() ||
       existingDepartment.name
 
+
     const updatedDepartment = {
+
       ...updates,
 
       name: updatedName,
@@ -422,51 +653,109 @@ export function MemberProvider({ children }) {
         Array.isArray(updates.roles)
           ? updates.roles
           : existingDepartment.roles,
+
+      updatedAt:
+        new Date().toISOString(),
+
     }
 
-    setDepartments(
-      (currentDepartments) =>
-        currentDepartments.map(
-          (department) =>
-            department.id ===
-            departmentId
-              ? {
-                  ...department,
-                  ...updatedDepartment,
-                  updatedAt:
-                    new Date().toISOString(),
-                }
-              : department
-        )
-    )
 
-    /*
-     * If the department name changes,
-     * keep existing member assignments
-     * synchronized with the new name.
-     */
+    try {
 
-    if (
-      existingDepartment.name !==
-      updatedName
-    ) {
-
-      setMembers((currentMembers) =>
-        currentMembers.map(
-          (member) =>
-            member.department ===
-            existingDepartment.name
-              ? {
-                  ...member,
-                  department:
-                    updatedName,
-                  updatedAt:
-                    new Date().toISOString(),
-                }
-              : member
-        )
+      await updateDoc(
+        doc(
+          db,
+          DEPARTMENTS_COLLECTION,
+          departmentId
+        ),
+        updatedDepartment
       )
+
+
+      setDepartments(
+        (currentDepartments) =>
+          currentDepartments.map(
+            (department) =>
+              department.id ===
+              departmentId
+                ? {
+                    ...department,
+                    ...updatedDepartment,
+                  }
+                : department
+          )
+      )
+
+
+      /*
+       * If department name changes,
+       * update member assignments.
+       */
+
+      if (
+        existingDepartment.name !==
+        updatedName
+      ) {
+
+        const affectedMembers =
+          members.filter(
+            (member) =>
+              member.department ===
+              existingDepartment.name
+          )
+
+
+        for (
+          const member
+          of affectedMembers
+        ) {
+
+          await updateDoc(
+            doc(
+              db,
+              MEMBERS_COLLECTION,
+              member.id
+            ),
+            {
+              department:
+                updatedName,
+
+              updatedAt:
+                new Date().toISOString(),
+            }
+          )
+
+        }
+
+
+        setMembers(
+          (currentMembers) =>
+            currentMembers.map(
+              (member) =>
+                member.department ===
+                existingDepartment.name
+                  ? {
+                      ...member,
+                      department:
+                        updatedName,
+                    }
+                  : member
+            )
+        )
+
+      }
+
+    } catch (error) {
+
+      console.error(
+        'Failed to update department:',
+        error
+      )
+
+      throw error
+
     }
+
   }
 
 
@@ -474,7 +763,7 @@ export function MemberProvider({ children }) {
      DELETE DEPARTMENT
   ========================================================== */
 
-  const deleteDepartment = (
+  const deleteDepartment = async (
     departmentId
   ) => {
 
@@ -485,42 +774,93 @@ export function MemberProvider({ children }) {
           departmentId
       )
 
+
     if (!departmentToDelete) {
       return
     }
 
-    /*
-     * Remove the department.
-     */
 
-    setDepartments(
-      (currentDepartments) =>
-        currentDepartments.filter(
-          (department) =>
-            department.id !==
-            departmentId
+    try {
+
+      await deleteDoc(
+        doc(
+          db,
+          DEPARTMENTS_COLLECTION,
+          departmentId
         )
-    )
-
-    /*
-     * Keep members in the system.
-     * Only remove their department assignment.
-     */
-
-    setMembers((currentMembers) =>
-      currentMembers.map(
-        (member) =>
-          member.department ===
-          departmentToDelete.name
-            ? {
-                ...member,
-                department: '',
-                updatedAt:
-                  new Date().toISOString(),
-              }
-            : member
       )
-    )
+
+
+      setDepartments(
+        (currentDepartments) =>
+          currentDepartments.filter(
+            (department) =>
+              department.id !==
+              departmentId
+          )
+      )
+
+
+      /*
+       * Keep members.
+       * Remove department assignment.
+       */
+
+      const affectedMembers =
+        members.filter(
+          (member) =>
+            member.department ===
+            departmentToDelete.name
+        )
+
+
+      for (
+        const member
+        of affectedMembers
+      ) {
+
+        await updateDoc(
+          doc(
+            db,
+            MEMBERS_COLLECTION,
+            member.id
+          ),
+          {
+            department: '',
+
+            updatedAt:
+              new Date().toISOString(),
+          }
+        )
+
+      }
+
+
+      setMembers(
+        (currentMembers) =>
+          currentMembers.map(
+            (member) =>
+              member.department ===
+              departmentToDelete.name
+                ? {
+                    ...member,
+                    department: '',
+                  }
+                : member
+          )
+      )
+
+    } catch (error) {
+
+      console.error(
+        'Failed to delete department:',
+        error
+      )
+
+      throw error
+
+    }
+
   }
 
 
@@ -528,14 +868,18 @@ export function MemberProvider({ children }) {
      ADD ACCOUNTABILITY GROUP
   ========================================================== */
 
-  const addGroup = (name) => {
+  const addGroup = async (
+    name
+  ) => {
 
     const cleanName =
       name?.trim()
 
+
     if (!cleanName) {
       return
     }
+
 
     const alreadyExists =
       groups.some(
@@ -544,14 +888,49 @@ export function MemberProvider({ children }) {
           cleanName.toLowerCase()
       )
 
+
     if (alreadyExists) {
       return
     }
 
-    setGroups((currentGroups) => [
-      ...currentGroups,
-      cleanName,
-    ])
+
+    try {
+
+      await addDoc(
+        collection(
+          db,
+          GROUPS_COLLECTION
+        ),
+        {
+          name: cleanName,
+
+          createdAt:
+            new Date().toISOString(),
+
+          updatedAt:
+            new Date().toISOString(),
+        }
+      )
+
+
+      setGroups(
+        (currentGroups) => [
+          ...currentGroups,
+          cleanName,
+        ]
+      )
+
+    } catch (error) {
+
+      console.error(
+        'Failed to create group:',
+        error
+      )
+
+      throw error
+
+    }
+
   }
 
 
@@ -559,7 +938,7 @@ export function MemberProvider({ children }) {
      UPDATE ACCOUNTABILITY GROUP
   ========================================================== */
 
-  const updateGroup = (
+  const updateGroup = async (
     oldName,
     newName
   ) => {
@@ -567,33 +946,118 @@ export function MemberProvider({ children }) {
     const cleanName =
       newName?.trim()
 
+
     if (!cleanName) {
       return
     }
 
-    setGroups((currentGroups) =>
-      currentGroups.map((group) =>
-        group === oldName
-          ? cleanName
-          : group
-      )
-    )
 
-    /*
-     * Keep existing student assignments
-     * synchronized with the renamed group.
-     */
+    try {
 
-    setMembers((currentMembers) =>
-      currentMembers.map((member) =>
-        member.group === oldName
-          ? {
-              ...member,
-              group: cleanName,
-            }
-          : member
+      const groupsSnapshot =
+        await getDocs(
+          collection(
+            db,
+            GROUPS_COLLECTION
+          )
+        )
+
+
+      const groupDocument =
+        groupsSnapshot.docs.find(
+          (item) =>
+            item.data().name ===
+            oldName
+        )
+
+
+      if (groupDocument) {
+
+        await updateDoc(
+          doc(
+            db,
+            GROUPS_COLLECTION,
+            groupDocument.id
+          ),
+          {
+            name: cleanName,
+
+            updatedAt:
+              new Date().toISOString(),
+          }
+        )
+
+      }
+
+
+      setGroups(
+        (currentGroups) =>
+          currentGroups.map(
+            (group) =>
+              group === oldName
+                ? cleanName
+                : group
+          )
       )
-    )
+
+
+      /*
+       * Synchronize member assignments.
+       */
+
+      const affectedMembers =
+        members.filter(
+          (member) =>
+            member.group === oldName
+        )
+
+
+      for (
+        const member
+        of affectedMembers
+      ) {
+
+        await updateDoc(
+          doc(
+            db,
+            MEMBERS_COLLECTION,
+            member.id
+          ),
+          {
+            group: cleanName,
+
+            updatedAt:
+              new Date().toISOString(),
+          }
+        )
+
+      }
+
+
+      setMembers(
+        (currentMembers) =>
+          currentMembers.map(
+            (member) =>
+              member.group === oldName
+                ? {
+                    ...member,
+                    group: cleanName,
+                  }
+                : member
+          )
+      )
+
+    } catch (error) {
+
+      console.error(
+        'Failed to update group:',
+        error
+      )
+
+      throw error
+
+    }
+
   }
 
 
@@ -601,30 +1065,109 @@ export function MemberProvider({ children }) {
      DELETE ACCOUNTABILITY GROUP
   ========================================================== */
 
-  const deleteGroup = (groupName) => {
+  const deleteGroup = async (
+    groupName
+  ) => {
 
-    setGroups((currentGroups) =>
-      currentGroups.filter(
-        (group) =>
-          group !== groupName
+    try {
+
+      const groupsSnapshot =
+        await getDocs(
+          collection(
+            db,
+            GROUPS_COLLECTION
+          )
+        )
+
+
+      const groupDocument =
+        groupsSnapshot.docs.find(
+          (item) =>
+            item.data().name ===
+            groupName
+        )
+
+
+      if (groupDocument) {
+
+        await deleteDoc(
+          doc(
+            db,
+            GROUPS_COLLECTION,
+            groupDocument.id
+          )
+        )
+
+      }
+
+
+      setGroups(
+        (currentGroups) =>
+          currentGroups.filter(
+            (group) =>
+              group !== groupName
+          )
       )
-    )
 
-    /*
-     * Do not delete students when a group
-     * is removed. Simply unassign them.
-     */
 
-    setMembers((currentMembers) =>
-      currentMembers.map((member) =>
-        member.group === groupName
-          ? {
-              ...member,
-              group: '',
-            }
-          : member
+      /*
+       * Keep members.
+       * Remove group assignment.
+       */
+
+      const affectedMembers =
+        members.filter(
+          (member) =>
+            member.group === groupName
+        )
+
+
+      for (
+        const member
+        of affectedMembers
+      ) {
+
+        await updateDoc(
+          doc(
+            db,
+            MEMBERS_COLLECTION,
+            member.id
+          ),
+          {
+            group: '',
+
+            updatedAt:
+              new Date().toISOString(),
+          }
+        )
+
+      }
+
+
+      setMembers(
+        (currentMembers) =>
+          currentMembers.map(
+            (member) =>
+              member.group === groupName
+                ? {
+                    ...member,
+                    group: '',
+                  }
+                : member
+          )
       )
-    )
+
+    } catch (error) {
+
+      console.error(
+        'Failed to delete group:',
+        error
+      )
+
+      throw error
+
+    }
+
   }
 
 
@@ -635,32 +1178,52 @@ export function MemberProvider({ children }) {
   return (
     <MemberContext.Provider
       value={{
+
         /* Members */
 
         members,
+
         addMember,
+
         updateMember,
+
         deleteMember,
+
         getMember,
+
 
         /* Departments */
 
         departments,
+
         addDepartment,
+
         updateDepartment,
+
         deleteDepartment,
+
 
         /* Accountability */
 
         groups,
+
         addGroup,
+
         updateGroup,
+
         deleteGroup,
+
+
+        /* Loading */
+
+        loading,
+
       }}
     >
       {children}
     </MemberContext.Provider>
   )
+
 }
 
 
@@ -669,5 +1232,9 @@ export function MemberProvider({ children }) {
 ============================================================ */
 
 export function useMembers() {
-  return useContext(MemberContext)
+
+  return useContext(
+    MemberContext
+  )
+
 }
