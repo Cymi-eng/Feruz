@@ -4,7 +4,6 @@ import {
   EyeOff,
   LockKeyhole,
   LogIn,
-  Church,
   AlertCircle,
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
@@ -17,6 +16,7 @@ import {
 } from 'firebase/auth'
 
 import { db, auth } from '../firebase'
+import churchLogo from '../assets/rhsf.jpeg'
 
 const AUTH_STORAGE_KEY = 'church-auth'
 const USERS_COLLECTION = 'users'
@@ -78,10 +78,6 @@ function Login() {
     setLoading(true)
 
     try {
-      /*
-       * Convert the application username
-       * into the Firebase Authentication email.
-       */
       const email =
         USERNAME_EMAILS[
           username.toLowerCase()
@@ -97,12 +93,6 @@ function Login() {
         return
       }
 
-      /*
-       * Authenticate with Firebase Authentication.
-       *
-       * Firebase handles the actual password
-       * verification.
-       */
       const credential =
         await signInWithEmailAndPassword(
           auth,
@@ -113,10 +103,6 @@ function Login() {
       const firebaseUser =
         credential.user
 
-      /*
-       * Load the application profile
-       * from Firestore.
-       */
       const usersSnapshot =
         await getDocs(
           collection(
@@ -133,10 +119,6 @@ function Login() {
           })
         )
 
-      /*
-       * Find the Firestore profile using
-       * the Firebase Authentication UID.
-       */
       let user =
         users.find(
           (item) =>
@@ -144,10 +126,6 @@ function Login() {
             firebaseUser.uid
         )
 
-      /*
-       * Fallback to email matching if the
-       * Firestore UID has not been added yet.
-       */
       if (!user) {
         user =
           users.find(
@@ -163,10 +141,6 @@ function Login() {
           )
       }
 
-      /*
-       * Authentication succeeded, but there
-       * is no matching church profile.
-       */
       if (!user) {
         setError(
           'Your login is valid, but your church account profile has not been configured yet. Please contact an administrator.'
@@ -177,9 +151,6 @@ function Login() {
         return
       }
 
-      /*
-       * Check account status.
-       */
       if (
         user.status &&
         String(user.status)
@@ -195,10 +166,6 @@ function Login() {
         return
       }
 
-      /*
-       * Save the authenticated application
-       * session locally.
-       */
       const authData = {
         isAuthenticated: true,
 
@@ -239,10 +206,6 @@ function Login() {
         JSON.stringify(authData)
       )
 
-      /*
-       * Send the authenticated user
-       * directly to the dashboard.
-       */
       navigate('/', {
         replace: true,
       })
@@ -298,8 +261,14 @@ function Login() {
 
           <div className="mb-8 text-center">
 
-            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-blue-600 text-white shadow-lg">
-              <Church size={32} />
+            <div className="mx-auto flex h-24 w-24 items-center justify-center overflow-hidden rounded-full bg-white shadow-lg ring-4 ring-blue-50">
+
+              <img
+                src={churchLogo}
+                alt="Church logo"
+                className="h-full w-full object-cover"
+              />
+
             </div>
 
             <h1 className="mt-5 text-2xl font-bold text-slate-800">
