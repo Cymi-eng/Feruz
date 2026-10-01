@@ -71,10 +71,10 @@ function AddStudent() {
    * The groups can come from MemberContext as either:
    *
    * 1. Strings:
-   *    "Group 1"
+   *    "Grace Group"
    *
    * 2. Firestore group objects:
-   *    { id: "...", name: "Group 1", leader: "..." }
+   *    { id: "...", name: "Grace Group" }
    *
    * Normalize both formats for the select below.
    */
@@ -118,32 +118,36 @@ function AddStudent() {
     const admissionNumber =
       form.admissionNumber.trim()
 
-    if (!admissionNumber) {
-      newErrors.admissionNumber =
-        'Admission number is required.'
-    }
+    /*
+     * Admission number is optional.
+     *
+     * Only check for duplicates when the user
+     * actually provides an admission number.
+     */
+    if (admissionNumber) {
+      const duplicateAdmissionNumber =
+        members.some((member) => {
+          const existingAdmissionNumber =
+            member.admissionNumber ||
+            member.admission_number ||
+            ''
 
-    const duplicateAdmissionNumber =
-      members.some((member) => {
-        const existingAdmissionNumber =
-          member.admissionNumber ||
-          member.admission_number ||
-          ''
+          if (!String(existingAdmissionNumber).trim()) {
+            return false
+          }
 
-        return (
-          String(existingAdmissionNumber)
-            .trim()
-            .toLowerCase() ===
-          admissionNumber.toLowerCase()
-        )
-      })
+          return (
+            String(existingAdmissionNumber)
+              .trim()
+              .toLowerCase() ===
+            admissionNumber.toLowerCase()
+          )
+        })
 
-    if (
-      admissionNumber &&
-      duplicateAdmissionNumber
-    ) {
-      newErrors.admissionNumber =
-        'This admission number is already registered.'
+      if (duplicateAdmissionNumber) {
+        newErrors.admissionNumber =
+          'This admission number is already registered.'
+      }
     }
 
     if (!form.firstName.trim()) {
@@ -208,6 +212,9 @@ function AddStudent() {
     const student = {
       type: 'student',
 
+      /*
+       * Admission number is optional.
+       */
       admissionNumber:
         form.admissionNumber.trim(),
 
@@ -416,7 +423,6 @@ function AddStudent() {
 
             <FormField
               label="Admission Number"
-              required
               error={errors.admissionNumber}
             >
               <div className="relative">
@@ -430,7 +436,7 @@ function AddStudent() {
                   name="admissionNumber"
                   value={form.admissionNumber}
                   onChange={handleChange}
-                  placeholder="e.g. CH/2026/001"
+                  placeholder="Optional"
                   className={inputClass(
                     errors.admissionNumber,
                     true

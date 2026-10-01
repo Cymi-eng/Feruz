@@ -26,27 +26,13 @@ const DEPARTMENTS_COLLECTION = 'departments'
 const GROUPS_COLLECTION = 'groups'
 
 /* ============================================================
-   DEFAULT ACCOUNTABILITY GROUPS
-============================================================ */
-
-const initialGroups = [
-  'Group 1',
-  'Group 2',
-  'Group 3',
-  'Group 4',
-  'Group 5',
-  'Group 6',
-  'Group 7',
-]
-
-/* ============================================================
    PROVIDER
 ============================================================ */
 
 export function MemberProvider({ children }) {
   const [members, setMembers] = useState([])
   const [departments, setDepartments] = useState([])
-  const [groups, setGroups] = useState(initialGroups)
+  const [groups, setGroups] = useState([])
   const [loading, setLoading] = useState(true)
 
   /* ==========================================================
@@ -256,7 +242,7 @@ export function MemberProvider({ children }) {
         )
 
         /* --------------------------------
-           GROUPS
+           ACCOUNTABILITY GROUPS
         -------------------------------- */
 
         unsubscribeGroups = onSnapshot(
@@ -265,31 +251,49 @@ export function MemberProvider({ children }) {
             GROUPS_COLLECTION
           ),
           (snapshot) => {
-            const firestoreGroups =
-              snapshot.docs.map(
-                (item) => ({
-                  id: item.id,
-                  ...item.data(),
-                })
-              )
+            const uniqueGroupNames = new Map()
 
-            if (
-              firestoreGroups.length > 0
-            ) {
-              setGroups(
-                firestoreGroups
-                  .filter(
-                    (group) =>
-                      group.name
+            snapshot.docs.forEach(
+              (item) => {
+                const name =
+                  item.data().name?.trim()
+
+                if (!name) {
+                  return
+                }
+
+                const normalizedName =
+                  name.toLowerCase()
+
+                /*
+                 * Keep only one copy of each
+                 * group name in the application.
+                 */
+                if (
+                  !uniqueGroupNames.has(
+                    normalizedName
                   )
-                  .map(
-                    (group) =>
-                      group.name
+                ) {
+                  uniqueGroupNames.set(
+                    normalizedName,
+                    name
                   )
-              )
-            } else {
-              setGroups(initialGroups)
-            }
+                }
+              }
+            )
+
+            const firestoreGroups = [
+              ...uniqueGroupNames.values(),
+            ]
+
+            setGroups(
+              firestoreGroups
+            )
+
+            console.log(
+              'ACCOUNTABILITY GROUPS LOADED:',
+              firestoreGroups
+            )
           },
           (error) => {
             console.error(
@@ -297,7 +301,11 @@ export function MemberProvider({ children }) {
               error
             )
 
-            setGroups(initialGroups)
+            /*
+             * Do not inject fake/default groups.
+             * Groups must come from Firestore.
+             */
+            setGroups([])
           }
         )
       } catch (error) {
@@ -308,7 +316,7 @@ export function MemberProvider({ children }) {
 
         setMembers(initialMembers)
         setDepartments([])
-        setGroups(initialGroups)
+        setGroups([])
       } finally {
         setLoading(false)
       }
@@ -932,7 +940,7 @@ export function MemberProvider({ children }) {
       name?.trim()
 
     if (!cleanName) {
-      return
+      return null
     }
 
     const alreadyExists =
@@ -943,32 +951,65 @@ export function MemberProvider({ children }) {
       )
 
     if (alreadyExists) {
-      return
+      return null
+    }
+
+    const group = {
+      name: cleanName,
+
+      createdAt:
+        new Date().toISOString(),
+
+      updatedAt:
+        new Date().toISOString(),
     }
 
     try {
-      await addDoc(
-        collection(
-          db,
-          GROUPS_COLLECTION
-        ),
-        {
-          name: cleanName,
+      const document =
+        await addDoc(
+          collection(
+            db,
+            GROUPS_COLLECTION
+          ),
+          group
+        )
 
-          createdAt:
-            new Date().toISOString(),
+      const savedGroup = {
+        id: document.id,
+        ...group,
+      }
 
-          updatedAt:
-            new Date().toISOString(),
+      /*
+       * Keep the local state synchronized
+       * immediately. Firestore's listener will
+       * also confirm the final state.
+       */
+      setGroups(
+        (currentGroups) => {
+          const exists =
+            currentGroups.some(
+              (currentGroup) =>
+                currentGroup.toLowerCase() ===
+                cleanName.toLowerCase()
+            )
+
+          if (exists) {
+            return currentGroups
+          }
+
+          return [
+            ...currentGroups,
+            cleanName,
+          ]
         }
       )
 
-      setGroups(
-        (currentGroups) => [
-          ...currentGroups,
-          cleanName,
-        ]
+      console.log(
+        'ACCOUNTABILITY GROUP CREATED:',
+        savedGroup
       )
+
+      return savedGroup
     } catch (error) {
       console.error(
         'Failed to create group:',
@@ -994,6 +1035,24 @@ export function MemberProvider({ children }) {
       return
     }
 
+    if (
+      oldName?.toLowerCase() ===
+      cleanName.toLowerCase()
+    ) {
+      return
+    }
+
+    const duplicateGroup =
+      groups.some(
+        (group) =>
+          group.toLowerCase() ===
+          cleanName.toLowerCase()
+      )
+
+    if (duplicateGroup) {
+      return
+    }
+
     try {
       const groupsSnapshot =
         await getDocs(
@@ -1003,14 +1062,22 @@ export function MemberProvider({ children }) {
           )
         )
 
-      const groupDocument =
-        groupsSnapshot.docs.find(
+      const groupDocuments =
+        groupsSnapshot.docs.filter(
           (item) =>
-            item.data().name ===
-            oldName
+            item.data().name?.trim().toLowerCase() ===
+            oldName?.trim().toLowerCase()
         )
 
-      if (groupDocument) {
+      /*
+       * Update every Firestore document with
+       * the old name so duplicate records do
+       * not leave stale names behind.
+       */
+      for (
+        const groupDocument
+        of groupDocuments
+      ) {
         await updateDoc(
           doc(
             db,
@@ -1027,13 +1094,21 @@ export function MemberProvider({ children }) {
       }
 
       setGroups(
-        (currentGroups) =>
-          currentGroups.map(
-            (group) =>
-              group === oldName
-                ? cleanName
-                : group
-          )
+        (currentGroups) => {
+          const nextGroups =
+            currentGroups.map(
+              (group) =>
+                group === oldName
+                  ? cleanName
+                  : group
+            )
+
+          return [
+            ...new Set(
+              nextGroups
+            ),
+          ]
+        }
       )
 
       /*
@@ -1103,14 +1178,21 @@ export function MemberProvider({ children }) {
           )
         )
 
-      const groupDocument =
-        groupsSnapshot.docs.find(
+      const groupDocuments =
+        groupsSnapshot.docs.filter(
           (item) =>
-            item.data().name ===
-            groupName
+            item.data().name?.trim().toLowerCase() ===
+            groupName?.trim().toLowerCase()
         )
 
-      if (groupDocument) {
+      /*
+       * Delete every Firestore document with
+       * this group name.
+       */
+      for (
+        const groupDocument
+        of groupDocuments
+      ) {
         await deleteDoc(
           doc(
             db,
@@ -1124,7 +1206,8 @@ export function MemberProvider({ children }) {
         (currentGroups) =>
           currentGroups.filter(
             (group) =>
-              group !== groupName
+              group.toLowerCase() !==
+              groupName.toLowerCase()
           )
       )
 

@@ -12,7 +12,6 @@ import {
 import { NavLink } from 'react-router-dom'
 
 function Sidebar() {
-
   const menuItems = [
     {
       name: 'Dashboard',
@@ -41,7 +40,7 @@ function Sidebar() {
     },
     {
       name: 'Accountability',
-      path: '/groups',
+      path: '/accountability',
       icon: UsersRound,
     },
   ]
@@ -51,9 +50,9 @@ function Sidebar() {
 
       {/* Logo */}
 
-      <div className="flex items-center gap-3 h-20 px-6 border-b border-slate-800">
+      <div className="flex h-20 items-center gap-3 border-b border-slate-800 px-6">
 
-        <div className="flex items-center justify-center w-10 h-10 bg-blue-600 rounded-lg">
+        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-600">
           ⛪
         </div>
 
@@ -69,19 +68,17 @@ function Sidebar() {
 
       </div>
 
-
       {/* Navigation */}
 
       <div className="px-4 py-6">
 
-        <p className="px-3 mb-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+        <p className="mb-3 px-3 text-xs font-semibold uppercase tracking-wider text-slate-500">
           Main Menu
         </p>
 
         <nav className="space-y-1">
 
           {menuItems.map((item) => {
-
             const Icon = item.icon
 
             return (
@@ -89,18 +86,16 @@ function Sidebar() {
                 key={item.path}
                 to={item.path}
                 className={({ isActive }) =>
-                  `flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium transition ${
+                  `flex items-center gap-3 rounded-lg px-3 py-3 text-sm font-medium transition ${
                     isActive
                       ? 'bg-blue-600 text-white'
                       : 'text-slate-300 hover:bg-slate-800 hover:text-white'
                   }`
                 }
               >
-
                 <Icon size={19} />
 
                 {item.name}
-
               </NavLink>
             )
           })}
@@ -109,21 +104,25 @@ function Sidebar() {
 
       </div>
 
-
       {/* Bottom */}
 
-      <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-slate-800">
+      <div className="absolute bottom-0 left-0 right-0 border-t border-slate-800 p-4">
 
         <NavLink
           to="/settings"
-          className="flex items-center gap-3 px-3 py-3 text-sm text-slate-300 hover:bg-slate-800 rounded-lg"
+          className="flex items-center gap-3 rounded-lg px-3 py-3 text-sm text-slate-300 hover:bg-slate-800"
         >
           <Settings size={19} />
+
           Settings
         </NavLink>
 
-        <button className="flex items-center gap-3 w-full px-3 py-3 mt-1 text-sm text-red-400 hover:bg-slate-800 rounded-lg">
+        <button
+          type="button"
+          className="mt-1 flex w-full items-center gap-3 rounded-lg px-3 py-3 text-sm text-red-400 hover:bg-slate-800"
+        >
           <LogOut size={19} />
+
           Logout
         </button>
 

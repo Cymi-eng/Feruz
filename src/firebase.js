@@ -1,8 +1,9 @@
 import { initializeApp } from 'firebase/app'
 import { getFirestore } from 'firebase/firestore'
+import { getAuth } from 'firebase/auth'
 
 const firebaseConfig = {
-  apiKey: 'AIzaSyDIpM2rlSc-JwQqNF3exa36HURU5SUUfQ8',
+  apiKey: 'AIzaSyDIpM2rlSc-JwQqNF3exa36HURU5SUUfT8',
   authDomain: 'church-d325f.firebaseapp.com',
   projectId: 'church-d325f',
   storageBucket: 'church-d325f.firebasestorage.app',
@@ -13,5 +14,6 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig)
 
 export const db = getFirestore(app)
+export const auth = getAuth(app)
 
 export default app
