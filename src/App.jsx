@@ -22,6 +22,7 @@ import Departments from './pages/Departments'
 import AddDepartment from './pages/AddDepartment'
 import Groups from './pages/Groups'
 import AddGroup from './pages/AddGroup'
+import Accountability from './pages/Accountability'
 import Settings from './pages/Settings'
 
 const AUTH_STORAGE_KEY = 'church-auth'
@@ -82,7 +83,10 @@ function App() {
     <MemberProvider>
       <BrowserRouter>
         <Routes>
-          {/* Public Login */}
+
+          {/* ==================================================
+              PUBLIC LOGIN
+          ================================================== */}
 
           <Route
             path="/login"
@@ -95,10 +99,20 @@ function App() {
             }
           />
 
-          {/* Protected System */}
+          {/* ==================================================
+              PROTECTED SYSTEM
+          ================================================== */}
 
           <Route element={<ProtectedRoutes />}>
-            <Route path="/" element={<Dashboard />} />
+
+            {/* Dashboard */}
+
+            <Route
+              path="/"
+              element={<Dashboard />}
+            />
+
+            {/* Members */}
 
             <Route
               path="/members"
@@ -110,6 +124,8 @@ function App() {
               element={<AddMember />}
             />
 
+            {/* Students */}
+
             <Route
               path="/students"
               element={<Students />}
@@ -119,6 +135,8 @@ function App() {
               path="/students/add"
               element={<AddStudent />}
             />
+
+            {/* Community */}
 
             <Route
               path="/community"
@@ -130,6 +148,8 @@ function App() {
               element={<AddCommunity />}
             />
 
+            {/* Departments */}
+
             <Route
               path="/departments"
               element={<Departments />}
@@ -139,6 +159,8 @@ function App() {
               path="/departments/add"
               element={<AddDepartment />}
             />
+
+            {/* Groups */}
 
             <Route
               path="/groups"
@@ -150,18 +172,36 @@ function App() {
               element={<AddGroup />}
             />
 
+            {/* Accountability */}
+
+            <Route
+              path="/accountability"
+              element={<Accountability />}
+            />
+
+            {/* Settings */}
+
             <Route
               path="/settings"
               element={<Settings />}
             />
+
           </Route>
 
-          {/* Unknown routes */}
+          {/* ==================================================
+              UNKNOWN ROUTES
+          ================================================== */}
 
           <Route
             path="*"
-            element={<Navigate to="/" replace />}
+            element={
+              <Navigate
+                to="/"
+                replace
+              />
+            }
           />
+
         </Routes>
       </BrowserRouter>
     </MemberProvider>

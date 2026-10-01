@@ -67,6 +67,33 @@ function AddStudent() {
   const [success, setSuccess] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
 
+  /*
+   * The groups can come from MemberContext as either:
+   *
+   * 1. Strings:
+   *    "Group 1"
+   *
+   * 2. Firestore group objects:
+   *    { id: "...", name: "Group 1", leader: "..." }
+   *
+   * Normalize both formats for the select below.
+   */
+  const accountabilityGroups = groups
+    .map((group) => {
+      if (typeof group === 'string') {
+        return {
+          id: group,
+          name: group,
+        }
+      }
+
+      return {
+        id: group?.id || group?.name,
+        name: group?.name || '',
+      }
+    })
+    .filter((group) => group.name)
+
   function handleChange(event) {
     const {
       name,
@@ -231,9 +258,18 @@ function AddStudent() {
       department:
         form.department.trim(),
 
+      /*
+       * Store the selected accountability group
+       * as its name. This is what the Accountability
+       * page uses when counting members.
+       */
       group:
         form.accountabilityGroup,
 
+      /*
+       * Keep this field as well for compatibility
+       * with the existing student data structure.
+       */
       accountabilityGroup:
         form.accountabilityGroup,
 
@@ -773,12 +809,12 @@ function AddStudent() {
                   Select accountability group
                 </option>
 
-                {groups.map((group) => (
+                {accountabilityGroups.map((group) => (
                   <option
-                    key={group}
-                    value={group}
+                    key={group.id || group.name}
+                    value={group.name}
                   >
-                    {group}
+                    {group.name}
                   </option>
                 ))}
               </select>

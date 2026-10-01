@@ -1,6 +1,12 @@
+
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArrowLeft, UserRound, Save, CheckCircle } from 'lucide-react'
+import {
+  ArrowLeft,
+  UserRound,
+  Save,
+  CheckCircle,
+} from 'lucide-react'
 
 import { useMembers } from '../context/MemberContext'
 
@@ -32,6 +38,31 @@ function AddCommunity() {
   const [isSaving, setIsSaving] = useState(false)
   const [success, setSuccess] = useState(false)
   const [error, setError] = useState('')
+
+  /*
+   * Accountability groups are shared with the
+   * Accountability page through MemberContext.
+   *
+   * Support both:
+   *
+   * 1. "Group 1"
+   * 2. { id: "...", name: "Group 1", leader: "..." }
+   */
+  const accountabilityGroups = groups
+    .map((group) => {
+      if (typeof group === 'string') {
+        return {
+          id: group,
+          name: group,
+        }
+      }
+
+      return {
+        id: group?.id || group?.name,
+        name: group?.name || '',
+      }
+    })
+    .filter((group) => group.name)
 
   const handleChange = (e) => {
     const { name, value } = e.target
@@ -100,9 +131,17 @@ function AddCommunity() {
       department:
         formData.department,
 
+      /*
+       * Store the group name so the Accountability
+       * page can count this member automatically.
+       */
       group:
         formData.group,
 
+      /*
+       * Keep the accountabilityGroup field for
+       * compatibility with the existing data model.
+       */
       accountabilityGroup:
         formData.group,
 
@@ -405,6 +444,7 @@ function AddCommunity() {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mt-6">
 
+            {/* Department */}
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-2">
                 Department
@@ -431,6 +471,7 @@ function AddCommunity() {
               </select>
             </div>
 
+            {/* Accountability Group */}
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-2">
                 Accountability Group
@@ -443,20 +484,21 @@ function AddCommunity() {
                 className="w-full px-4 py-2.5 border border-slate-200 rounded-lg bg-white outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="">
-                  Select group
+                  Select accountability group
                 </option>
 
-                {groups.map((group) => (
+                {accountabilityGroups.map((group) => (
                   <option
-                    key={group}
-                    value={group}
+                    key={group.id || group.name}
+                    value={group.name}
                   >
-                    {group}
+                    {group.name}
                   </option>
                 ))}
               </select>
             </div>
 
+            {/* Status */}
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-2">
                 Status
@@ -523,3 +565,4 @@ function AddCommunity() {
 }
 
 export default AddCommunity
+
