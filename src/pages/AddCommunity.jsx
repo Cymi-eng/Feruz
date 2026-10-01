@@ -1,11 +1,12 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArrowLeft, UserRound, Save } from 'lucide-react'
+import { ArrowLeft, UserRound, Save, CheckCircle } from 'lucide-react'
 
 import { useMembers } from '../context/MemberContext'
 
 function AddCommunity() {
   const navigate = useNavigate()
+
   const {
     addMember,
     departments = [],
@@ -29,6 +30,7 @@ function AddCommunity() {
   })
 
   const [isSaving, setIsSaving] = useState(false)
+  const [success, setSuccess] = useState(false)
   const [error, setError] = useState('')
 
   const handleChange = (e) => {
@@ -46,6 +48,7 @@ function AddCommunity() {
     if (isSaving) return
 
     setError('')
+    setSuccess(false)
 
     const firstName = formData.firstName.trim()
     const middleName = formData.middleName.trim()
@@ -112,7 +115,11 @@ function AddCommunity() {
     try {
       await addMember(communityMember)
 
-      navigate('/community')
+      setSuccess(true)
+
+      setTimeout(() => {
+        navigate('/community')
+      }, 900)
     } catch (err) {
       console.error(
         'Failed to save community member:',
@@ -163,6 +170,17 @@ function AddCommunity() {
         </div>
 
       </div>
+
+      {/* Success */}
+      {success && (
+        <div className="flex items-center gap-3 p-4 rounded-lg border border-green-200 bg-green-50 text-green-700 text-sm">
+          <CheckCircle size={20} />
+
+          <span>
+            Community member saved successfully. Redirecting...
+          </span>
+        </div>
+      )}
 
       {/* Error */}
       {error && (
@@ -251,9 +269,11 @@ function AddCommunity() {
                 <option value="">
                   Select gender
                 </option>
+
                 <option value="Male">
                   Male
                 </option>
+
                 <option value="Female">
                   Female
                 </option>
@@ -476,14 +496,22 @@ function AddCommunity() {
 
           <button
             type="submit"
-            disabled={isSaving}
+            disabled={isSaving || success}
             className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition disabled:opacity-60 disabled:cursor-not-allowed"
           >
-            <Save size={18} />
-
-            {isSaving
-              ? 'Saving...'
-              : 'Save Community Member'}
+            {success ? (
+              <>
+                <CheckCircle size={18} />
+                Saved
+              </>
+            ) : (
+              <>
+                <Save size={18} />
+                {isSaving
+                  ? 'Saving...'
+                  : 'Save Community Member'}
+              </>
+            )}
           </button>
 
         </div>
