@@ -36,6 +36,9 @@ function Departments() {
     roles: '',
   })
 
+  const [isSaving, setIsSaving] = useState(false)
+  const [error, setError] = useState('')
+
   /* ============================================================
      CLOSE ROW MENU ON OUTSIDE TAP / CLICK
   ============================================================ */
@@ -136,6 +139,7 @@ function Departments() {
       roles: department.roles?.join(', ') || '',
     })
 
+    setError('')
     setOpenMenu(null)
   }
 
@@ -148,18 +152,23 @@ function Departments() {
       ...currentForm,
       [field]: value,
     }))
+
+    setError('')
   }
 
   /* ============================================================
      SAVE DEPARTMENT
   ============================================================ */
 
-  const handleEditSubmit = (event) => {
+  const handleEditSubmit = async (event) => {
     event.preventDefault()
+
+    if (isSaving) return
 
     const cleanName = editForm.name.trim()
 
     if (!cleanName) {
+      setError('Department name is required.')
       return
     }
 
@@ -168,24 +177,42 @@ function Departments() {
       .map((role) => role.trim())
       .filter(Boolean)
 
-    updateDepartment(
-      editingDepartment.id,
-      {
-        name: cleanName,
-        leader: editForm.leader.trim(),
-        assistant: editForm.assistant.trim(),
-        roles,
-      }
-    )
+    setError('')
+    setIsSaving(true)
 
-    setEditingDepartment(null)
+    try {
+      await updateDepartment(
+        editingDepartment.id,
+        {
+          name: cleanName,
+          leader: editForm.leader.trim(),
+          assistant: editForm.assistant.trim(),
+          roles,
+        }
+      )
+
+      setEditingDepartment(null)
+    } catch (err) {
+      console.error(
+        'Failed to update department:',
+        err
+      )
+
+      setError(
+        'The department could not be updated. Please check your Firebase connection and try again.'
+      )
+    } finally {
+      setIsSaving(false)
+    }
   }
 
   /* ============================================================
      DELETE DEPARTMENT
   ============================================================ */
 
-  const handleDelete = (department) => {
+  const handleDelete = async (department) => {
+    if (isSaving) return
+
     const count = memberCount(department.name)
 
     const message =
@@ -201,9 +228,24 @@ function Departments() {
       return
     }
 
-    deleteDepartment(department.id)
+    setIsSaving(true)
 
-    setOpenMenu(null)
+    try {
+      await deleteDepartment(department.id)
+
+      setOpenMenu(null)
+    } catch (err) {
+      console.error(
+        'Failed to delete department:',
+        err
+      )
+
+      window.alert(
+        'The department could not be removed. Please check your Firebase connection and try again.'
+      )
+    } finally {
+      setIsSaving(false)
+    }
   }
 
   // text-base on phones stops iOS from zooming into inputs on focus
@@ -636,7 +678,6 @@ function Departments() {
                           <span className="text-sm text-slate-400">
                             No roles
                           </span>
-
                         )}
 
                       </td>
@@ -705,7 +746,6 @@ function Departments() {
 
       {/* ========================================================
           EDIT DEPARTMENT MODAL
-          Bottom sheet on phones, centered dialog from sm up
       ======================================================== */}
 
       {editingDepartment && (
@@ -713,8 +753,13 @@ function Departments() {
         <div
           className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 sm:items-center sm:px-4"
           onMouseDown={(event) => {
-            if (event.target === event.currentTarget) {
-              setEditingDepartment(null)
+            if (
+              event.target ===
+              event.currentTarget
+            ) {
+              if (!isSaving) {
+                setEditingDepartment(null)
+              }
             }
           }}
         >
@@ -736,11 +781,13 @@ function Departments() {
               </div>
 
               <button
+                type="button"
                 onClick={() =>
                   setEditingDepartment(null)
                 }
+                disabled={isSaving}
                 aria-label="Close"
-                className="shrink-0 rounded-lg p-2.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+                className="shrink-0 rounded-lg p-2.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <X size={20} />
               </button>
@@ -755,6 +802,14 @@ function Departments() {
             >
 
               <div className="min-h-0 flex-1 space-y-5 overflow-y-auto p-4 sm:p-6">
+
+                {/* Error */}
+
+                {error && (
+                  <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
+                    {error}
+                  </div>
+                )}
 
                 {/* Department Name */}
 
@@ -774,6 +829,7 @@ function Departments() {
                     }
                     className={inputClass}
                     required
+                    disabled={isSaving}
                   />
                 </div>
 
@@ -795,6 +851,7 @@ function Departments() {
                     }
                     placeholder="Enter leader name"
                     className={inputClass}
+                    disabled={isSaving}
                   />
                 </div>
 
@@ -816,6 +873,7 @@ function Departments() {
                     }
                     placeholder="Enter assistant name"
                     className={inputClass}
+                    disabled={isSaving}
                   />
                 </div>
 
@@ -837,6 +895,7 @@ function Departments() {
                     }
                     placeholder="e.g. Keyboardist, Singer, Sound"
                     className={inputClass}
+                    disabled={isSaving}
                   />
 
                   <p className="mt-1.5 text-xs text-slate-400">
@@ -846,7 +905,7 @@ function Departments() {
 
               </div>
 
-              {/* Buttons: pinned below the scrolling form */}
+              {/* Buttons */}
 
               <div className="flex shrink-0 flex-col-reverse gap-3 border-t border-slate-100 bg-white px-4 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-3 sm:flex-row sm:justify-end sm:px-6 sm:py-4">
 
@@ -855,16 +914,20 @@ function Departments() {
                   onClick={() =>
                     setEditingDepartment(null)
                   }
-                  className="rounded-lg border border-slate-200 px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50 sm:py-2.5"
+                  disabled={isSaving}
+                  className="rounded-lg border border-slate-200 px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 sm:py-2.5"
                 >
                   Cancel
                 </button>
 
                 <button
                   type="submit"
-                  className="rounded-lg bg-blue-600 px-5 py-3 text-sm font-medium text-white hover:bg-blue-700 sm:py-2.5"
+                  disabled={isSaving}
+                  className="rounded-lg bg-blue-600 px-5 py-3 text-sm font-medium text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60 sm:py-2.5"
                 >
-                  Save Changes
+                  {isSaving
+                    ? 'Saving...'
+                    : 'Save Changes'}
                 </button>
 
               </div>
@@ -881,10 +944,9 @@ function Departments() {
   )
 }
 
-/* ------------------------------
+/* ============================================================
    ROW ACTIONS MENU
-   Shared by the card list and the table
------------------------------- */
+============================================================ */
 
 function RowMenu({
   department,
@@ -902,8 +964,13 @@ function RowMenu({
     >
 
       <button
+        type="button"
         onClick={() =>
-          setOpenMenu(isOpen ? null : department.id)
+          setOpenMenu(
+            isOpen
+              ? null
+              : department.id
+          )
         }
         aria-label={`Actions for ${department.name}`}
         aria-expanded={isOpen}
@@ -917,7 +984,10 @@ function RowMenu({
         <div className="absolute right-0 top-full z-20 mt-1 w-52 rounded-lg border border-slate-200 bg-white py-1 shadow-lg">
 
           <button
-            onClick={() => onEdit(department)}
+            type="button"
+            onClick={() =>
+              onEdit(department)
+            }
             className="flex w-full items-center gap-3 px-4 py-3 text-sm text-slate-700 hover:bg-slate-50 lg:py-2.5"
           >
             <Pencil size={16} />
@@ -925,7 +995,10 @@ function RowMenu({
           </button>
 
           <button
-            onClick={() => onDelete(department)}
+            type="button"
+            onClick={() =>
+              onDelete(department)
+            }
             className="flex w-full items-center gap-3 px-4 py-3 text-sm text-red-600 hover:bg-red-50 lg:py-2.5"
           >
             <Trash2 size={16} />
