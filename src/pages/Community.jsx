@@ -1,33 +1,21 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import {
   UserRound,
   Search,
   Plus,
   MoreVertical,
   Users,
-  X,
 } from 'lucide-react'
 
 import { useMembers } from '../context/MemberContext'
 
 function Community() {
-  const {
-    members,
-    addMember,
-    departments,
-    groups,
-  } = useMembers()
+  const navigate = useNavigate()
+
+  const { members } = useMembers()
 
   const [search, setSearch] = useState('')
-  const [showForm, setShowForm] = useState(false)
-
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    phone: '',
-    department: '',
-    group: '',
-  })
 
   const communityMembers = members.filter(
     (member) => member.type === 'community'
@@ -44,42 +32,6 @@ function Community() {
       member.group?.toLowerCase().includes(searchTerm)
     )
   })
-
-  const handleChange = (e) => {
-    const { name, value } = e.target
-
-    setFormData((current) => ({
-      ...current,
-      [name]: value,
-    }))
-  }
-
-  const handleSubmit = (e) => {
-    e.preventDefault()
-
-    if (!formData.name.trim()) {
-      return
-    }
-
-    addMember({
-      name: formData.name.trim(),
-      email: formData.email.trim(),
-      phone: formData.phone.trim(),
-      type: 'community',
-      department: formData.department,
-      group: formData.group,
-    })
-
-    setFormData({
-      name: '',
-      email: '',
-      phone: '',
-      department: '',
-      group: '',
-    })
-
-    setShowForm(false)
-  }
 
   return (
     <div className="space-y-6">
@@ -107,7 +59,7 @@ function Community() {
 
         <button
           type="button"
-          onClick={() => setShowForm(true)}
+          onClick={() => navigate('/community/add')}
           className="flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
         >
           <Plus size={18} />
@@ -120,6 +72,7 @@ function Community() {
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
 
         <div className="bg-white border border-slate-200 rounded-xl p-5">
+
           <div className="flex items-center gap-3">
 
             <div className="p-3 bg-blue-50 text-blue-600 rounded-lg">
@@ -137,9 +90,11 @@ function Community() {
             </div>
 
           </div>
+
         </div>
 
         <div className="bg-white border border-slate-200 rounded-xl p-5">
+
           <p className="text-sm text-slate-500">
             Active Members
           </p>
@@ -151,9 +106,11 @@ function Community() {
               ).length
             }
           </p>
+
         </div>
 
         <div className="bg-white border border-slate-200 rounded-xl p-5">
+
           <p className="text-sm text-slate-500">
             Serving
           </p>
@@ -165,6 +122,7 @@ function Community() {
               ).length
             }
           </p>
+
         </div>
 
       </div>
@@ -197,6 +155,7 @@ function Community() {
         <div className="flex items-center justify-between p-6 border-b border-slate-200">
 
           <div>
+
             <h2 className="font-semibold text-slate-800">
               Community Members
             </h2>
@@ -205,11 +164,15 @@ function Community() {
               {filteredMembers.length} member
               {filteredMembers.length !== 1 ? 's' : ''}
             </p>
+
           </div>
 
           <div className="flex items-center gap-2 text-sm text-slate-500">
+
             <Users size={17} />
+
             {filteredMembers.length}
+
           </div>
 
         </div>
@@ -382,166 +345,6 @@ function Community() {
         </div>
 
       </div>
-
-      {/* Add Community Member Modal */}
-      {showForm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-
-          <div className="w-full max-w-lg bg-white rounded-2xl shadow-xl">
-
-            <div className="flex items-center justify-between px-6 py-5 border-b border-slate-200">
-
-              <div>
-                <h2 className="text-lg font-semibold text-slate-800">
-                  Add Community Member
-                </h2>
-
-                <p className="text-sm text-slate-400 mt-1">
-                  Add a new member to the church community.
-                </p>
-              </div>
-
-              <button
-                type="button"
-                onClick={() => setShowForm(false)}
-                className="p-2 rounded-lg hover:bg-slate-100"
-              >
-                <X size={20} className="text-slate-500" />
-              </button>
-
-            </div>
-
-            <form
-              onSubmit={handleSubmit}
-              className="p-6 space-y-4"
-            >
-
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">
-                  Full Name
-                </label>
-
-                <input
-                  name="name"
-                  value={formData.name}
-                  onChange={handleChange}
-                  required
-                  placeholder="Enter full name"
-                  className="w-full border border-slate-200 rounded-lg px-3 py-2.5 outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">
-                    Phone
-                  </label>
-
-                  <input
-                    name="phone"
-                    value={formData.phone}
-                    onChange={handleChange}
-                    placeholder="0712 345 678"
-                    className="w-full border border-slate-200 rounded-lg px-3 py-2.5 outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">
-                    Email
-                  </label>
-
-                  <input
-                    type="email"
-                    name="email"
-                    value={formData.email}
-                    onChange={handleChange}
-                    placeholder="member@example.com"
-                    className="w-full border border-slate-200 rounded-lg px-3 py-2.5 outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">
-                    Department
-                  </label>
-
-                  <select
-                    name="department"
-                    value={formData.department}
-                    onChange={handleChange}
-                    className="w-full border border-slate-200 rounded-lg px-3 py-2.5 outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="">
-                      Select department
-                    </option>
-
-                    {departments.map((department) => (
-                      <option
-                        key={department.id}
-                        value={department.name}
-                      >
-                        {department.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">
-                    Accountability Group
-                  </label>
-
-                  <select
-                    name="group"
-                    value={formData.group}
-                    onChange={handleChange}
-                    className="w-full border border-slate-200 rounded-lg px-3 py-2.5 outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="">
-                      Select group
-                    </option>
-
-                    {groups.map((group) => (
-                      <option key={group} value={group}>
-                        {group}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-              </div>
-
-              <div className="flex justify-end gap-3 pt-4 border-t border-slate-200">
-
-                <button
-                  type="button"
-                  onClick={() => setShowForm(false)}
-                  className="px-4 py-2.5 border border-slate-200 rounded-lg text-slate-600 hover:bg-slate-50"
-                >
-                  Cancel
-                </button>
-
-                <button
-                  type="submit"
-                  className="px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-                >
-                  Add Member
-                </button>
-
-              </div>
-
-            </form>
-
-          </div>
-
-        </div>
-      )}
 
     </div>
   )

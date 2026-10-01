@@ -27,6 +27,7 @@ function Students() {
     members,
     updateMember,
     deleteMember,
+    departments,
   } = useMembers()
 
   const students = useMemo(
@@ -360,7 +361,7 @@ function Students() {
               onChange={(event) =>
                 setSearch(event.target.value)
               }
-              placeholder="Search by name, admission number, phone, course, residence..."
+              placeholder="Search by name, admission number, phone, course, department..."
               className="w-full rounded-xl border border-gray-200 bg-gray-50 py-3 pl-11 pr-4 text-sm outline-none transition focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-100"
             />
           </div>
@@ -397,7 +398,7 @@ function Students() {
       {/* TABLE */}
       <div className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[1100px]">
+          <table className="w-full min-w-[1250px]">
             <thead className="border-b border-gray-100 bg-gray-50">
               <tr>
                 <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
@@ -410,6 +411,10 @@ function Students() {
 
                 <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
                   Year
+                </th>
+
+                <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
+                  Department
                 </th>
 
                 <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
@@ -472,6 +477,19 @@ function Students() {
                     <span className="inline-flex rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">
                       {student.year || '—'}
                     </span>
+                  </td>
+
+                  {/* DEPARTMENT */}
+                  <td className="px-6 py-4">
+                    {student.department ? (
+                      <span className="inline-flex rounded-full bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-700">
+                        {student.department}
+                      </span>
+                    ) : (
+                      <span className="text-sm text-gray-400">
+                        Not assigned
+                      </span>
+                    )}
                   </td>
 
                   {/* CONTACT */}
@@ -582,7 +600,7 @@ function Students() {
               {filteredStudents.length === 0 && (
                 <tr>
                   <td
-                    colSpan="8"
+                    colSpan="9"
                     className="px-6 py-16 text-center"
                   >
                     <div className="mx-auto flex max-w-sm flex-col items-center">
@@ -655,9 +673,7 @@ function Students() {
                   <InfoItem
                     icon={<Hash size={17} />}
                     label="Admission Number"
-                    value={
-                      selectedStudent.admissionNumber
-                    }
+                    value={selectedStudent.admissionNumber}
                   />
 
                   <InfoItem
@@ -681,9 +697,7 @@ function Students() {
                   <InfoItem
                     icon={<Phone size={17} />}
                     label="Alternative Phone"
-                    value={
-                      selectedStudent.alternativePhone
-                    }
+                    value={selectedStudent.alternativePhone}
                   />
 
                   <InfoItem
@@ -843,9 +857,11 @@ function Students() {
                           <option value="">
                             Select gender
                           </option>
+
                           <option value="Male">
                             Male
                           </option>
+
                           <option value="Female">
                             Female
                           </option>
@@ -855,9 +871,7 @@ function Students() {
                       <Field
                         label="Admission Number"
                         required
-                        value={
-                          editForm.admissionNumber
-                        }
+                        value={editForm.admissionNumber}
                         onChange={(value) =>
                           handleEditChange(
                             'admissionNumber',
@@ -885,6 +899,7 @@ function Students() {
                           <option value="Active">
                             Active
                           </option>
+
                           <option value="Inactive">
                             Inactive
                           </option>
@@ -917,9 +932,7 @@ function Students() {
 
                       <Field
                         label="Alternative Phone"
-                        value={
-                          editForm.alternativePhone
-                        }
+                        value={editForm.alternativePhone}
                         onChange={(value) =>
                           handleEditChange(
                             'alternativePhone',
@@ -1008,6 +1021,7 @@ function Students() {
                           <option value="">
                             Select year
                           </option>
+
                           {years.map((year) => (
                             <option
                               key={year}
@@ -1031,17 +1045,35 @@ function Students() {
                         inputClass={inputClass}
                       />
 
-                      <Field
-                        label="Department"
-                        value={editForm.department}
-                        onChange={(value) =>
-                          handleEditChange(
-                            'department',
-                            value
-                          )
-                        }
-                        inputClass={inputClass}
-                      />
+                      <div>
+                        <label className={labelClass}>
+                          Department
+                        </label>
+
+                        <select
+                          value={editForm.department}
+                          onChange={(event) =>
+                            handleEditChange(
+                              'department',
+                              event.target.value
+                            )
+                          }
+                          className={inputClass}
+                        >
+                          <option value="">
+                            Not assigned
+                          </option>
+
+                          {departments.map((department) => (
+                            <option
+                              key={department.id}
+                              value={department.name}
+                            >
+                              {department.name}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
 
                       <div>
                         <label className={labelClass}>

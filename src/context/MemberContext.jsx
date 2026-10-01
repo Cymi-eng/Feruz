@@ -11,7 +11,8 @@ const MemberContext = createContext()
 
 const MEMBERS_STORAGE_KEY = 'church-members'
 const DEPARTMENTS_STORAGE_KEY = 'church-departments'
-const GROUPS_STORAGE_KEY = 'church-accountability-groups'
+const GROUPS_STORAGE_KEY =
+  'church-accountability-groups'
 
 
 /* ============================================================
@@ -79,12 +80,10 @@ export function MemberProvider({ children }) {
   ========================================================== */
 
   useEffect(() => {
-
     localStorage.setItem(
       MEMBERS_STORAGE_KEY,
       JSON.stringify(members)
     )
-
   }, [members])
 
 
@@ -93,12 +92,10 @@ export function MemberProvider({ children }) {
   ========================================================== */
 
   useEffect(() => {
-
     localStorage.setItem(
       DEPARTMENTS_STORAGE_KEY,
       JSON.stringify(departments)
     )
-
   }, [departments])
 
 
@@ -107,12 +104,10 @@ export function MemberProvider({ children }) {
   ========================================================== */
 
   useEffect(() => {
-
     localStorage.setItem(
       GROUPS_STORAGE_KEY,
       JSON.stringify(groups)
     )
-
   }, [groups])
 
 
@@ -278,7 +273,10 @@ export function MemberProvider({ children }) {
      UPDATE MEMBER
   ========================================================== */
 
-  const updateMember = (memberId, updates) => {
+  const updateMember = (
+    memberId,
+    updates
+  ) => {
 
     setMembers((currentMembers) =>
       currentMembers.map((member) =>
@@ -303,7 +301,8 @@ export function MemberProvider({ children }) {
 
     setMembers((currentMembers) =>
       currentMembers.filter(
-        (member) => member.id !== memberId
+        (member) =>
+          member.id !== memberId
       )
     )
   }
@@ -316,7 +315,8 @@ export function MemberProvider({ children }) {
   const getMember = (memberId) => {
 
     return members.find(
-      (member) => member.id === memberId
+      (member) =>
+        member.id === memberId
     )
   }
 
@@ -332,20 +332,48 @@ export function MemberProvider({ children }) {
     roles = [],
   }) => {
 
+    const cleanName =
+      name?.trim()
+
+    if (!cleanName) {
+      return null
+    }
+
+    const alreadyExists =
+      departments.some(
+        (department) =>
+          department.name
+            ?.toLowerCase() ===
+          cleanName.toLowerCase()
+      )
+
+    if (alreadyExists) {
+      return null
+    }
+
     const department = {
       id: Date.now(),
-      name,
-      leader,
-      assistant,
+
+      name: cleanName,
+
+      leader:
+        leader?.trim() || '',
+
+      assistant:
+        assistant?.trim() || '',
+
       roles,
+
       createdAt:
         new Date().toISOString(),
     }
 
-    setDepartments((currentDepartments) => [
-      ...currentDepartments,
-      department,
-    ])
+    setDepartments(
+      (currentDepartments) => [
+        ...currentDepartments,
+        department,
+      ]
+    )
 
     return department
   }
@@ -360,17 +388,85 @@ export function MemberProvider({ children }) {
     updates
   ) => {
 
-    setDepartments((currentDepartments) =>
-      currentDepartments.map(
+    const existingDepartment =
+      departments.find(
         (department) =>
-          department.id === departmentId
-            ? {
-                ...department,
-                ...updates,
-              }
-            : department
+          department.id ===
+          departmentId
       )
+
+    if (!existingDepartment) {
+      return
+    }
+
+    const updatedName =
+      updates.name?.trim() ||
+      existingDepartment.name
+
+    const updatedDepartment = {
+      ...updates,
+
+      name: updatedName,
+
+      leader:
+        updates.leader !== undefined
+          ? updates.leader.trim()
+          : existingDepartment.leader,
+
+      assistant:
+        updates.assistant !== undefined
+          ? updates.assistant.trim()
+          : existingDepartment.assistant,
+
+      roles:
+        Array.isArray(updates.roles)
+          ? updates.roles
+          : existingDepartment.roles,
+    }
+
+    setDepartments(
+      (currentDepartments) =>
+        currentDepartments.map(
+          (department) =>
+            department.id ===
+            departmentId
+              ? {
+                  ...department,
+                  ...updatedDepartment,
+                  updatedAt:
+                    new Date().toISOString(),
+                }
+              : department
+        )
     )
+
+    /*
+     * If the department name changes,
+     * keep existing member assignments
+     * synchronized with the new name.
+     */
+
+    if (
+      existingDepartment.name !==
+      updatedName
+    ) {
+
+      setMembers((currentMembers) =>
+        currentMembers.map(
+          (member) =>
+            member.department ===
+            existingDepartment.name
+              ? {
+                  ...member,
+                  department:
+                    updatedName,
+                  updatedAt:
+                    new Date().toISOString(),
+                }
+              : member
+        )
+      )
+    }
   }
 
 
@@ -382,10 +478,47 @@ export function MemberProvider({ children }) {
     departmentId
   ) => {
 
-    setDepartments((currentDepartments) =>
-      currentDepartments.filter(
+    const departmentToDelete =
+      departments.find(
         (department) =>
-          department.id !== departmentId
+          department.id ===
+          departmentId
+      )
+
+    if (!departmentToDelete) {
+      return
+    }
+
+    /*
+     * Remove the department.
+     */
+
+    setDepartments(
+      (currentDepartments) =>
+        currentDepartments.filter(
+          (department) =>
+            department.id !==
+            departmentId
+        )
+    )
+
+    /*
+     * Keep members in the system.
+     * Only remove their department assignment.
+     */
+
+    setMembers((currentMembers) =>
+      currentMembers.map(
+        (member) =>
+          member.department ===
+          departmentToDelete.name
+            ? {
+                ...member,
+                department: '',
+                updatedAt:
+                  new Date().toISOString(),
+              }
+            : member
       )
     )
   }
@@ -446,7 +579,6 @@ export function MemberProvider({ children }) {
       )
     )
 
-
     /*
      * Keep existing student assignments
      * synchronized with the renamed group.
@@ -477,7 +609,6 @@ export function MemberProvider({ children }) {
           group !== groupName
       )
     )
-
 
     /*
      * Do not delete students when a group
