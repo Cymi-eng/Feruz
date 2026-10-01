@@ -760,7 +760,7 @@ function AddStudent() {
                 name="department"
                 value={form.department}
                 onChange={handleChange}
-                placeholder="e.g. Computing"
+                placeholder="your church departmente.g. Ushering"
                 className={inputClass()}
               />
             </FormField>
