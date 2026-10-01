@@ -1,135 +1,161 @@
+jsx
 import {
   LayoutDashboard,
   Users,
-  GraduationCap,
   UserRound,
-  Building2,
   UsersRound,
+  Building2,
+  Wallet,
+  BarChart3,
   Settings,
   LogOut,
 } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
 
-import { NavLink } from 'react-router-dom'
+import churchLogo from '../assets/rhsf.jpeg'
 
-function Sidebar() {
-  const menuItems = [
+function Sidebar({
+  activePage,
+  setActivePage,
+  isOpen,
+  onClose,
+}) {
+  const navigate = useNavigate()
+
+  const navigation = [
     {
       name: 'Dashboard',
-      path: '/',
       icon: LayoutDashboard,
+      path: '/',
     },
     {
-      name: 'All Members',
-      path: '/members',
+      name: 'Members',
       icon: Users,
-    },
-    {
-      name: 'Students',
-      path: '/students',
-      icon: GraduationCap,
-    },
-    {
-      name: 'Community',
-      path: '/community',
-      icon: UserRound,
+      path: '/members',
     },
     {
       name: 'Departments',
-      path: '/departments',
       icon: Building2,
+      path: '/departments',
     },
     {
-      name: 'Accountability',
-      path: '/accountability',
+      name: 'Groups',
       icon: UsersRound,
+      path: '/groups',
+    },
+    {
+      name: 'Attendance',
+      icon: UserRound,
+      path: '/attendance',
+    },
+    {
+      name: 'Giving',
+      icon: Wallet,
+      path: '/giving',
+    },
+    {
+      name: 'Reports',
+      icon: BarChart3,
+      path: '/reports',
     },
   ]
 
+  const handleNavigation = (item) => {
+    setActivePage?.(item.name)
+    navigate(item.path)
+    onClose?.()
+  }
+
+  const handleLogout = () => {
+    localStorage.removeItem('church-auth')
+    navigate('/login')
+  }
+
   return (
-    <aside className="fixed left-0 top-0 z-40 h-screen w-64 bg-slate-900 text-white">
+    <>
+      {isOpen && (
+        <div
+          className="fixed inset-0 z-30 bg-black/40 lg:hidden"
+          onClick={onClose}
+        />
+      )}
 
-      {/* Logo */}
+      <aside
+        className={`fixed inset-y-0 left-0 z-40 flex w-64 flex-col bg-white shadow-xl transition-transform duration-300 lg:static lg:translate-x-0 ${
+          isOpen ? 'translate-x-0' : '-translate-x-full'
+        }`}
+      >
+        {/* Branding */}
+        <div className="flex h-20 items-center gap-3 border-b border-slate-200 px-5">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-white shadow-sm ring-1 ring-slate-200">
+            <img
+              src={churchLogo}
+              alt="Church logo"
+              className="h-full w-full object-cover"
+            />
+          </div>
 
-      <div className="flex h-20 items-center gap-3 border-b border-slate-800 px-6">
+          <div className="min-w-0">
+            <h1 className="truncate text-sm font-bold text-slate-800">
+              Church System
+            </h1>
 
-        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-600">
-          ⛪
+            <p className="truncate text-xs text-slate-500">
+              Management Portal
+            </p>
+          </div>
         </div>
 
-        <div>
-          <h1 className="font-bold">
-            Church System
-          </h1>
-
-          <p className="text-xs text-slate-400">
-            Management Portal
-          </p>
-        </div>
-
-      </div>
-
-      {/* Navigation */}
-
-      <div className="px-4 py-6">
-
-        <p className="mb-3 px-3 text-xs font-semibold uppercase tracking-wider text-slate-500">
-          Main Menu
-        </p>
-
-        <nav className="space-y-1">
-
-          {menuItems.map((item) => {
+        {/* Navigation */}
+        <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-5">
+          {navigation.map((item) => {
             const Icon = item.icon
+            const isActive =
+              activePage === item.name ||
+              window.location.pathname === item.path
 
             return (
-              <NavLink
-                key={item.path}
-                to={item.path}
-                className={({ isActive }) =>
-                  `flex items-center gap-3 rounded-lg px-3 py-3 text-sm font-medium transition ${
-                    isActive
-                      ? 'bg-blue-600 text-white'
-                      : 'text-slate-300 hover:bg-slate-800 hover:text-white'
-                  }`
-                }
+              <button
+                key={item.name}
+                type="button"
+                onClick={() => handleNavigation(item)}
+                className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition ${
+                  isActive
+                    ? 'bg-blue-50 text-blue-600'
+                    : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                }`}
               >
                 <Icon size={19} />
-
-                {item.name}
-              </NavLink>
+                <span>{item.name}</span>
+              </button>
             )
           })}
-
         </nav>
 
-      </div>
+        {/* Bottom actions */}
+        <div className="border-t border-slate-200 p-3">
+          <button
+            type="button"
+            onClick={() => navigate('/settings')}
+            className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-slate-600 transition hover:bg-slate-50 hover:text-slate-900"
+          >
+            <Settings size={19} />
+            <span>Settings</span>
+          </button>
 
-      {/* Bottom */}
-
-      <div className="absolute bottom-0 left-0 right-0 border-t border-slate-800 p-4">
-
-        <NavLink
-          to="/settings"
-          className="flex items-center gap-3 rounded-lg px-3 py-3 text-sm text-slate-300 hover:bg-slate-800"
-        >
-          <Settings size={19} />
-
-          Settings
-        </NavLink>
-
-        <button
-          type="button"
-          className="mt-1 flex w-full items-center gap-3 rounded-lg px-3 py-3 text-sm text-red-400 hover:bg-slate-800"
-        >
-          <LogOut size={19} />
-
-          Logout
-        </button>
-
-      </div>
-
-    </aside>
+          <button
+            type="button"
+            onClick={handleLogout}
+            className="mt-1 flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-red-600 transition hover:bg-red-50"
+          >
+            <LogOut size={19} />
+            <span>Logout</span>
+          </button>
+        </div>
+      </aside>
+    </>
   )
 }
 
 export default Sidebar
+
